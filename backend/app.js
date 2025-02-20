@@ -2,8 +2,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const appointmentRoutes = require('./routes/appointmentRoutes.js');
 const userRoutes = require('./routes/userRoutes');
+const medicalRoutes = require('./routes/medicalRoutes.js');
 const chatRoutes = require('./routes/chatRoutes');
+const doctorRoutes = require('./routes/doctorRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -23,6 +26,13 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 // Routes
 app.use('/api/users', userRoutes); // User-related routes
 app.use('/api/chat', chatRoutes); // Chatbot-related routes
+app.use('/api/medical', medicalRoutes); // 👈 Make sure this line is present
+
+app.use('/api/appointments', appointmentRoutes);
+app.use('/uploads', express.static('uploads'));
+app.use('/api/doctors', doctorRoutes);
+
+
 
 // Start the server
 const PORT = process.env.PORT || 5000;
