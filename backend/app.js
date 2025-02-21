@@ -7,6 +7,8 @@ const userRoutes = require('./routes/userRoutes');
 const medicalRoutes = require('./routes/medicalRoutes.js');
 const chatRoutes = require('./routes/chatRoutes');
 const doctorRoutes = require('./routes/doctorRoutes');
+const diagnosisRoutes = require("./routes/diagnosisRoutes"); // Import diagnosis API
+
 
 // Load environment variables
 dotenv.config();
@@ -19,7 +21,7 @@ app.use(cors()); // Enable CORS for frontend-backend communication
 app.use(express.json()); // Parse JSON request bodies
 
 // Database connection
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.log('MongoDB connection error:', err));
 
@@ -27,6 +29,8 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 app.use('/api/users', userRoutes); // User-related routes
 app.use('/api/chat', chatRoutes); // Chatbot-related routes
 app.use('/api/medical', medicalRoutes); // 👈 Make sure this line is present
+app.use("/api", diagnosisRoutes);
+
 
 app.use('/api/appointments', appointmentRoutes);
 app.use('/uploads', express.static('uploads'));
