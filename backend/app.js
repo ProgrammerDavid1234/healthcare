@@ -8,6 +8,8 @@ const medicalRoutes = require('./routes/medicalRoutes.js');
 const chatRoutes = require('./routes/chatRoutes');
 const doctorRoutes = require('./routes/doctorRoutes');
 const diagnosisRoutes = require("./routes/diagnosisRoutes"); // Import diagnosis API
+const interactionsRoutes = require("./routes/interactionsRoutes");
+
 
 
 // Load environment variables
@@ -30,9 +32,12 @@ app.use('/api/users', userRoutes); // User-related routes
 app.use('/api/chat', chatRoutes); // Chatbot-related routes
 app.use('/api/medical', medicalRoutes); // 👈 Make sure this line is present
 app.use("/api", diagnosisRoutes);
+app.use("/api/diagnosis", diagnosisRoutes);
+app.use("/api", interactionsRoutes);
 
 
-app.use('/api/appointments', appointmentRoutes);
+
+app.use("/api", appointmentRoutes);
 app.use('/uploads', express.static('uploads'));
 app.use('/api/doctors', doctorRoutes);
 

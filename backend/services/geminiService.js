@@ -3,29 +3,38 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-async function analyzeSymptoms(symptoms, age, gender, medicalHistory) {
-    const prompt = `A patient is experiencing ${symptoms.join(", ")}. Age: ${age}, Gender: ${gender}, Medical history: ${medicalHistory}. What is the possible diagnosis?`;
+async function analyzeConditions(symptoms) {
+    const prompt = `A patient has the following symptoms: ${symptoms.join(", ")}. What are the possible medical conditions? Provide only a list of conditions.`;
 
-    let retries = 3; // Number of retries
-    while (retries > 0) {
-        try {
-            const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-            const response = await model.generateContent(prompt);
-            return response.response.text();
-        } catch (error) {
-            console.error("AI Error:", error);
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const response = await model.generateContent(prompt);
 
-            if (error.status === 503) {
-                retries--;
-                console.log(`Retrying... Attempts left: ${retries}`);
-                await new Promise((resolve) => setTimeout(resolve, 3000)); // Wait 3 seconds before retrying
-            } else {
-                break;
-            }
-        }
+        // Extract conditions from response
+        const conditions = response.response.text().split("\n").map(cond => cond.trim());
+        
+        return conditions;
+    } catch (error) {
+        console.error("AI Error:", error);
+        return ["Unknown Condition"];
     }
-
-    return "Unable to analyze symptoms at the moment.";
 }
 
-module.exports = analyzeSymptoms;
+async function getRecommendedTests(symptoms, age, gender, medicalHistory) {
+    const prompt = `A patient is experiencing ${symptoms.join(", ")}. Age: ${age}, Gender: ${gender}, Medical history: ${medicalHistory}. What medical tests should they undergo? Provide only a list of tests.`;
+
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const response = await model.generateContent(prompt);
+
+        // Extract tests from response
+        const tests = response.response.text().split("\n").map(test => test.trim());
+
+        return tests;
+    } catch (error) {
+        console.error("AI Error:", error);
+        return ["Unknown Test"];
+    }
+}
+
+module.exports = { analyzeConditions, getRecommendedTests };

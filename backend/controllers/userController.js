@@ -1,12 +1,14 @@
+const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const User = require('../models/User');
 
+
 // Register a new user
 const registerUser = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, medicalHistory, prescriptions } = req.body;
   try {
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -18,13 +20,21 @@ const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create a new user
-    const user = await User.create({ name, email, password: hashedPassword, role });
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: role || "patient", // Default role to "patient" if not provided
+      medicalHistory: medicalHistory ? medicalHistory.split(',').map(item => item.trim()) : [],
+      prescriptions: prescriptions ? prescriptions.split(',').map(item => item.trim()) : []
+    });
 
     res.status(201).json({ message: 'User registered successfully', user });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // Login an existing user
 const loginUser = async (req, res) => {
@@ -143,19 +153,50 @@ const getUserProfile = async (req, res) => {
 };
 
 
-const updateUserProfile = async (req, res) => {
-  const { name, age, gender, phone, medicalHistory } = req.body;
+const updateUserProfile = asyncHandler(async (req, res) => {
+  console.log("User from token:", req.user); // Debugging line
+
+  const user = await User.findById(req.user?.id);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  // Update fields
+  user.name = req.body.name || user.name;
+  user.email = req.body.email || user.email;
+  user.phone = req.body.phone || user.phone;
+  user.age = req.body.age || user.age;
+  user.gender = req.body.gender || user.gender;
+  user.role = req.body.role || user.role;
+
+  if (req.body.medicalHistory) {
+    user.medicalHistory = req.body.medicalHistory.split(',').map(item => item.trim());
+  }
+
+  if (req.body.password) {
+    user.password = req.body.password;
+  }
+
+  const updatedUser = await user.save();
+  res.json({ success: true, user });
+});
+
+
+const getMedicalHistory = async (req, res) => {
+  const { userId } = req.query; // Get userId from query parameters
   try {
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { name, age, gender, phone, medicalHistory },
-      { new: true }
-    ).select('-password');
-    res.json(user);
+    const user = await User.findById(userId).select('medicalHistory');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ medicalHistory: user.medicalHistory });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 const analyzeSymptoms = async (req, res) => {
   const { symptoms, age, gender, medicalHistory } = req.body;
@@ -255,4 +296,4 @@ const uploadMedicalRecord = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-module.exports = { registerUser, loginUser, forgotPassword, resetPassword, uploadMedicalRecord, bookAppointment, recommendTreatment, getPossibleConditions, analyzeSymptoms, updateUserProfile, getUserProfile };
+module.exports = { registerUser, loginUser, forgotPassword, resetPassword, uploadMedicalRecord, bookAppointment, recommendTreatment, getPossibleConditions, analyzeSymptoms, updateUserProfile, getUserProfile, getMedicalHistory };

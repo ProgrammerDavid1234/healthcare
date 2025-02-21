@@ -1,15 +1,21 @@
 const express = require('express');
-const { bookAnAppointment, getAppointments, cancelAppointment } = require('../controllers/appointmentController');
+const { bookAppointment, getAppointments, cancelAppointment, rescheduleAppointment, getUpcomingAppointments } = require('../controllers/appointmentController');
 const { protect } = require('../middleware/authMiddleware'); // Import protect middleware
 
 
 const router = express.Router();
 
-router.post('/book', protect, bookAnAppointment);
+router.post("/appointments", protect, bookAppointment);
 router.get('/', protect, getAppointments);
-router.delete('/:id', protect, cancelAppointment);
+router.delete("/appointments/:id", cancelAppointment);
+router.put("/appointments/:id/reschedule", protect, rescheduleAppointment);
 
-console.log(bookAnAppointment); // Should log the function, not undefined
+// Route to fetch upcoming appointments
+router.get('/upcoming', protect, getUpcomingAppointments);
+
+
+
+console.log(bookAppointment); // Should log the function, not undefined
 console.log(getAppointments);   // Should log the function, not undefined
 console.log(cancelAppointment); // Should log the function, not undefinedconst { protect } = require('../middleware/authMiddleware');
 

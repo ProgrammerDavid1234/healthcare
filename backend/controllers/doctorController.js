@@ -1,36 +1,30 @@
 const Doctor = require('../models/Doctor');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs'); // Using bcryptjs instead of bcrypt
+const bcrypt = require('bcryptjs');
 
-// Doctor Registration
-
+// Create a new doctor (Registration)
 const registerDoctor = async (req, res) => {
     try {
-        const { name, email, password, specialization, experience, phone } = req.body;
+        const { name, email, password, specialization, experience, phone, location, consultationFee, availability } = req.body;
 
-        // Check if doctor already exists
         let doctor = await Doctor.findOne({ email });
         if (doctor) {
             return res.status(400).json({ message: 'Doctor already exists' });
         }
 
-        // Hash the password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create new doctor
-        doctor = new Doctor({ name, email, password: hashedPassword, specialization, experience, phone });
+        doctor = new Doctor({ name, email, password: hashedPassword, specialization, experience, phone, location, consultationFee, availability });
         await doctor.save();
 
         res.status(201).json({ message: 'Doctor registered successfully' });
     } catch (error) {
-        console.error('Error in registerDoctor:', error); // Log the error
+        console.error('Error in registerDoctor:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 
-
-// Doctor Login
 const loginDoctor = async (req, res) => {
     const { email, password } = req.body;
 
@@ -69,20 +63,6 @@ const loginDoctor = async (req, res) => {
     }
 };
 
-
-// Get Doctor Profile (Protected)
-const getDoctorProfile = async (req, res) => {
-    try {
-        const doctor = await Doctor.findById(req.user.id).select('-password');
-        if (!doctor) {
-            return res.status(404).json({ message: 'Doctor not found' });
-        }
-        res.status(200).json(doctor);
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
-    }
-};
-
 const getAvailableDoctors = async (req, res) => {
     try {
         // Fetch only available doctors
@@ -99,33 +79,84 @@ const getAvailableDoctors = async (req, res) => {
     }
 };
 
-const getDoctorDetails = async (req, res) => {
+
+// Update doctor details
+const updateDoctor = async (req, res) => {
     try {
         const { doctorId } = req.params; // Get doctorId from URL
+        const updates = req.body; // Get updated fields from request body
 
-        // Find the doctor in the database
-        const doctor = await Doctor.findById(doctorId).select("name specialization experience phone email");
+        // Find and update the doctor
+        const doctor = await Doctor.findByIdAndUpdate(doctorId, updates, { new: true });
 
         if (!doctor) {
             return res.status(404).json({ message: "Doctor not found" });
         }
 
-        // Format response
-        res.status(200).json({
-            name: doctor.name,
-            specialty: doctor.specialization,
-            experience: doctor.experience,
-            contactInfo: {
-                phone: doctor.phone,
-                email: doctor.email
-            }
-        });
-
+        res.status(200).json({ message: "Doctor updated successfully", doctor });
     } catch (error) {
-        console.error("Error fetching doctor details:", error);
+        console.error("Error updating doctor:", error);
         res.status(500).json({ message: "Server error" });
     }
 };
 
+// Get all doctors
+const getAllDoctors = async (req, res) => {
+    try {
+        const doctors = await Doctor.find().select('-password');
+        res.status(200).json({ doctors });
+    } catch (error) {
+        console.error('Error fetching doctors:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
 
-module.exports = { registerDoctor, loginDoctor, getDoctorProfile, getAvailableDoctors, getDoctorDetails };
+// Get single doctor details
+const getDoctorDetails = async (req, res) => {
+    try {
+        const { doctorId } = req.params;
+        const doctor = await Doctor.findById(doctorId).select('-password');
+
+        if (!doctor) {
+            return res.status(404).json({ message: 'Doctor not found' });
+        }
+
+        res.status(200).json(doctor);
+    } catch (error) {
+        console.error('Error fetching doctor details:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Delete a doctor
+const deleteDoctor = async (req, res) => {
+    try {
+        const { doctorId } = req.params;
+        const doctor = await Doctor.findByIdAndDelete(doctorId);
+
+        if (!doctor) {
+            return res.status(404).json({ message: 'Doctor not found' });
+        }
+
+        res.status(200).json({ message: 'Doctor deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting doctor:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+const getDoctorProfile = async (req, res) => {
+    try {
+        const doctor = await Doctor.findById(req.user.id).select('-password');
+        if (!doctor) {
+            return res.status(404).json({ message: 'Doctor not found' });
+        }
+        res.status(200).json(doctor);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+
+
+module.exports = { registerDoctor, loginDoctor, updateDoctor, getAllDoctors, getDoctorDetails, deleteDoctor, getAvailableDoctors, getDoctorProfile}
