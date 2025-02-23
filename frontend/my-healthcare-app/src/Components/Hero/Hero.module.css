@@ -1,15 +1,62 @@
-*{
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-weight: 800;
 }
+
+body, html {
+    height: 100%;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+
+}
+body::-webkit-scrollbar{
+    display: none;
+}
+
+.general {
+    background-image: url(../../Assets/hero_static.jpg);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+.text{
+    text-align: center;
+    margin-top: 350px;
+}
+.text h3{
+    font-size: 50px;
+    color: rgb(255, 255, 255);
+}
+.text p{
+    font-size: 20px;
+    color: #fff;
+    background-color: blue;
+    border-radius: 100px;
+    cursor: pointer;
+    padding: 15px;
+    margin-left: 570px;
+    width: 200px;
+    margin-top: 20px;
+}
+.text p:hover{
+    background-color: #000;
+}
+
+
+
 .navbar{
     display: flex;
     justify-content: space-between;
     padding: 30px;
-    margin: 30px;
+    margin: 10px;
+    top: 100px;
     border-radius: 80px;
+    top: 50px; /* Moves it 50px down from the top */
     color: #fff;
     background-color: blue;
 }
@@ -44,6 +91,7 @@
 
 .right{
     display: flex;
+    color: white;
     gap: 10px;
     cursor: pointer;
 
@@ -51,4 +99,7 @@
 .middle{
     cursor: pointer;
     margin-right: 60px;
+}
+.right p{
+    color: white;
 }
