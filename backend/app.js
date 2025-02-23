@@ -9,6 +9,15 @@ const chatRoutes = require('./routes/chatRoutes');
 const doctorRoutes = require('./routes/doctorRoutes');
 const diagnosisRoutes = require("./routes/diagnosisRoutes"); // Import diagnosis API
 const interactionsRoutes = require("./routes/interactionsRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+// const adminRoutes = require("./routes/adminRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const authRoutes = require("./routes/authRoutes.js");
+
+// app.use("/api", adminRoutes);
+
+
+
 
 
 
@@ -34,6 +43,11 @@ app.use('/api/medical', medicalRoutes); // 👈 Make sure this line is present
 app.use("/api", diagnosisRoutes);
 app.use("/api/diagnosis", diagnosisRoutes);
 app.use("/api", interactionsRoutes);
+app.use("/api", notificationRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/admin", authRoutes);
+
+
 
 
 
