@@ -8,6 +8,8 @@ import Footer from "./Components/Footer/Footer";
 import Register from "./Components/Register/Register"; // Import Register Page
 import Login from "./Components/Login/Login";
 import Homescreen from "./Components/UserDashboard/HomeScreen/Homescreen";
+import AvailableDoctors from "./Components/UserDashboard/AvailableDoctors/AvailableDoctors";
+import Profile from "./Components/UserDashboard/Profile/Profile";
 
 const App = () => {
   return (
@@ -24,8 +26,12 @@ const App = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/userdashboard" element={<Homescreen />} />
+        <Route path="/availabledoctors" element={<AvailableDoctors />} />
+        <Route path="/profile" element={<Profile />} />
 
 
+
+        
       </Routes>
     </Router>
   );

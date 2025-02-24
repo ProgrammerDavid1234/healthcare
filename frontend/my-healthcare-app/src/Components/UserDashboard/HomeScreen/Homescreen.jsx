@@ -10,12 +10,19 @@ const Homescreen = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const doctorsPerPage = 5;
 
     const filteredDoctors = doctors.filter(doctor =>
         doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         doctor.specialization.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    // Pagination logic
+    const indexOfLastDoctor = currentPage * doctorsPerPage;
+    const indexOfFirstDoctor = indexOfLastDoctor - doctorsPerPage;
+    const currentDoctors = filteredDoctors.slice(indexOfFirstDoctor, indexOfLastDoctor);
+    const totalPages = Math.ceil(filteredDoctors.length / doctorsPerPage);
 
     // Fetch doctors from API
     useEffect(() => {
@@ -49,7 +56,6 @@ const Homescreen = () => {
         return () => clearInterval(interval); // Cleanup interval on component unmount
     }, []);
 
-
     return (
         <div className={styles.homepage}>
             <Sidebar />
@@ -77,7 +83,6 @@ const Homescreen = () => {
                 </div>
 
                 {/* Doctors Table */}
-                {/* Doctors Table */}
                 <div className={styles.tableContainer}>
                     <div className={styles.header}>
                         <h2>Available Doctors</h2>
@@ -94,36 +99,50 @@ const Homescreen = () => {
                         <p>Loading doctors...</p>
                     ) : error ? (
                         <p className={styles.error}>{error}</p>
-                    ) : doctors.length === 0 ? (
+                    ) : filteredDoctors.length === 0 ? (
                         <p>No doctors available</p>
                     ) : (
-                        <table className={styles.table}>
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Specialty</th>
-                                    <th>Experience</th>
-                                    <th>Fee</th>
-                                    <th>Rating</th>
-                                    <th>Availability</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredDoctors.map((doctor, index) => (
-                                    <tr key={index}>
-                                        <td>{doctor.name}</td>
-                                        <td>{doctor.specialization}</td>
-                                        <td>{doctor.experience} years</td>
-                                        <td>${doctor.consultationFee}</td>
-                                        <td>{doctor.ratings} ⭐</td>
-                                        <td>{doctor.availability}</td>
+                        <>
+                            <table className={styles.table}>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Specialty</th>
+                                        <th>Experience</th>
+                                        <th>Rating</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {currentDoctors.map((doctor, index) => (
+                                        <tr key={index}>
+                                            <td>{doctor.name}</td>
+                                            <td>{doctor.specialization}</td>
+                                            <td>{doctor.experience} years</td>
+                                            <td>{doctor.ratings} ⭐</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+
+                            {/* Pagination Controls */}
+                            <div className={styles.pagination}>
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    Previous
+                                </button>
+                                <span>Page {currentPage} of {totalPages}</span>
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </>
                     )}
                 </div>
-
             </div>
         </div>
     );
