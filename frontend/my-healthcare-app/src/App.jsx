@@ -6,6 +6,8 @@ import Clients from "./Components/Clients/Clients";
 import Features from "./Components/Features/Features";
 import Footer from "./Components/Footer/Footer";
 import Register from "./Components/Register/Register"; // Import Register Page
+import Login from "./Components/Login/Login";
+import Homescreen from "./Components/UserDashboard/HomeScreen/Homescreen";
 
 const App = () => {
   return (
@@ -20,6 +22,10 @@ const App = () => {
           </>
         } />
         <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/userdashboard" element={<Homescreen />} />
+
+
       </Routes>
     </Router>
   );
