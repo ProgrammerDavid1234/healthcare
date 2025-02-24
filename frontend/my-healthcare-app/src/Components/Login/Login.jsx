@@ -22,33 +22,34 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('https://healthcare-backend-a66n.onrender.com/api/users/login', formData);
+        const response = await axios.post(
+            'https://healthcare-backend-a66n.onrender.com/api/users/login',
+            formData
+        );
 
-      console.log("Login Response:", response.data.data); // ✅ Log full response
+        console.log("Login Response:", response.data); // ✅ Debugging log
 
-      // Check if user exists in response
-      if (!response.data || !response.data.user) {
-        console.error("Unexpected API Response:", response.data);
-        throw new Error("User data not found in response");
-      }
+        // Check if user exists in response
+        if (!response.data?.user) {
+            throw new Error("User data not found in response");
+        }
 
-      // ✅ Save user data in context
-      setToken(response.data.token);
-      setUser(response.data.user);  
+        setToken(response.data.token);
+        setUser(response.data.user);
 
-      toast.success(`Welcome, ${response.data.user.name}!`, { autoClose: 3000 });
+        toast.success(`Welcome, ${response.data.user.name}!`, { autoClose: 3000 });
 
-      setTimeout(() => {
-        navigate('/userdashboard');  // ✅ Redirect after login
-      }, 3000);
+        setTimeout(() => {
+            navigate('/userdashboard');
+        }, 3000);
     } catch (error) {
-      console.error("Login Error:", error.response ? error.response.data : error);
-      
-      toast.error(error.response?.data?.message || "Login Failed!", { autoClose: 3000 });
+        console.error("Login Error:", error.response ? error.response.data : error);
+        toast.error(error.response?.data?.message || "Login Failed!", { autoClose: 3000 });
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
 };
+
 
 
   return (
