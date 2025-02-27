@@ -1,4 +1,6 @@
-const Appointment = require('../models/Appointment'); // Ensure the model exists
+const Appointment = require("../models/Appointment");  // ✅ Check Path
+const Notification = require("../models/Notification");  // ✅ Ensure it's correctly imported
+const User = require("../models/User");  // ✅ Needed for doctor details
 const schedule = require("node-schedule");
 
 
@@ -19,12 +21,20 @@ const bookAppointment = async (req, res) => {
             symptoms
         });
 
-        // ✅ Notify the Doctor that an Appointment has been booked
-        await Notification.create({
-            userId: doctorId,  // Doctor receives the notification
-            message: `You have a new appointment scheduled on ${date} at ${time}.`,
-            type: "Appointment"
-        });
+        // ✅ Ensure Notification Model is Available Before Using It
+        if (!Notification) {
+            return res.status(500).json({ message: "Notification model not found" });
+        }
+
+        try {
+            await Notification.create({
+                userId: doctorId,  // Doctor receives the notification
+                message: `You have a new appointment scheduled on ${date} at ${time}.`,
+                type: "Appointment"
+            });
+        } catch (notifyError) {
+            console.error("Error creating notification:", notifyError);
+        }
 
         res.status(201).json({ message: "Appointment booked", appointment });
     } catch (error) {

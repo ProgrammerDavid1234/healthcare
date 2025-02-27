@@ -57,13 +57,14 @@ body::-webkit-scrollbar{
     top: 100px;
     border-radius: 80px;
     top: 50px; /* Moves it 50px down from the top */
-    color: #fff;
+    color: #fff !important;
     background-color: blue;
 }
 .left{
     display: flex;
     gap: 10px;
     cursor: pointer;
+    color: #fff !important;
 }
 .left p:hover, .middle p:hover, .right p:hover {
     position: relative;

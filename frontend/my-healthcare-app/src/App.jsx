@@ -10,6 +10,7 @@ import Login from "./Components/Login/Login";
 import Homescreen from "./Components/UserDashboard/HomeScreen/Homescreen";
 import AvailableDoctors from "./Components/UserDashboard/AvailableDoctors/AvailableDoctors";
 import Profile from "./Components/UserDashboard/Profile/Profile";
+import Appointments from "./Components/UserDashboard/Appointments/Appointments";
 
 const App = () => {
   return (
@@ -28,6 +29,7 @@ const App = () => {
         <Route path="/userdashboard" element={<Homescreen />} />
         <Route path="/availabledoctors" element={<AvailableDoctors />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/appointment" element={<Appointments />} />
 
 
 

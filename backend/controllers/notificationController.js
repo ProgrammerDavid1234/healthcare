@@ -1,5 +1,5 @@
 const Appointment = require('../models/Appointment');
-const Notification = require('../models/Notification');
+const Notification = require("../models/Notification");
 const User = require('../models/User'); // Assuming doctors & patients are in User model
 const schedule = require("node-schedule");
 
