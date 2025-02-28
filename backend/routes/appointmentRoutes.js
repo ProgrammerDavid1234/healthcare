@@ -6,7 +6,7 @@ const { protect } = require('../middleware/authMiddleware'); // Import protect m
 const router = express.Router();
 
 router.post("/appointments", protect, bookAppointment);
-router.get('/', protect, getAppointments);
+router.get('/getappointments', protect, getAppointments);
 router.delete("/appointments/:id", cancelAppointment);
 router.put("/appointments/:id/reschedule", protect, rescheduleAppointment);
 

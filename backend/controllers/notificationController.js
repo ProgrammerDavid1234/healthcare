@@ -1,37 +1,8 @@
-const Appointment = require('../models/Appointment');
+// const Appointment = require('../models/Appointment');
 const Notification = require("../models/Notification");
 const User = require('../models/User'); // Assuming doctors & patients are in User model
 const schedule = require("node-schedule");
 
-const bookAppointment = async (req, res) => {
-    try {
-        const { doctorId, date, time, reason, symptoms } = req.body;
-
-        if (!doctorId || !date || !time) {
-            return res.status(400).json({ message: "All fields are required" });
-        }
-
-        const appointment = await Appointment.create({
-            userId: req.user.id,  // Patient ID from token
-            doctorId,
-            date,
-            time,
-            reason,
-            symptoms
-        });
-
-        // Notify the Doctor
-        await Notification.create({
-            userId: doctorId,  // Doctor receives the notification
-            message: `You have a new appointment scheduled on ${date} at ${time}.`,
-            type: "Appointment"
-        });
-
-        res.status(201).json({ message: "Appointment booked", appointment });
-    } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
-    }
-};
 
 // Daily Reminder Function
 const sendDailyReminders = async () => {
@@ -58,75 +29,6 @@ const sendDailyReminders = async () => {
     }
 };
 
-// Get all appointments
-const getAppointments = async (req, res) => {
-    try {
-        const appointments = await Appointment.find({ userId: req.user.id });
-        res.status(200).json({ appointments });
-    } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
-    }
-};
-
-// Cancel appointment
-const cancelAppointment = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const appointment = await Appointment.findByIdAndDelete(id);
-
-        if (!appointment) {
-            return res.status(404).json({ message: "Appointment not found" });
-        }
-
-        res.status(200).json({ message: "Appointment canceled" });
-    } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
-    }
-};
-
-// Reschedule appointment
-const rescheduleAppointment = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { newDate, newTime } = req.body;
-
-        if (!newDate || !newTime) {
-            return res.status(400).json({ message: "New date and time are required." });
-        }
-
-        const appointment = await Appointment.findByIdAndUpdate(
-            id,
-            { date: newDate, time: newTime },
-            { new: true }
-        );
-
-        if (!appointment) {
-            return res.status(404).json({ message: "Appointment not found." });
-        }
-
-        res.json({ message: "Appointment rescheduled successfully", appointment });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server error while rescheduling.", error: error.message });
-    }
-};
-
-// Get upcoming appointments
-const getUpcomingAppointments = async (req, res) => {
-    try {
-        const userId = req.user.id; 
-        const today = new Date();
-
-        const appointments = await Appointment.find({
-            userId: userId,
-            date: { $gte: today } // Fetch only future appointments
-        }).sort({ date: 1, time: 1 });
-
-        res.status(200).json({ message: "Upcoming appointments retrieved", appointments });
-    } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
-    }
-};
 
 const sendNotification = async (req, res) => {
     try {
@@ -198,11 +100,6 @@ const sendEmergencyAlert = async (req, res) => {
 schedule.scheduleJob("0 9 * * *", sendDailyReminders);
 
 module.exports = { 
-    bookAppointment, 
-    getAppointments, 
-    cancelAppointment, 
-    rescheduleAppointment, 
-    getUpcomingAppointments,
     sendNotification,
     getUserNotifications,
     sendPrescriptionReminder,

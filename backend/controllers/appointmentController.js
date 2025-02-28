@@ -1,7 +1,9 @@
-const Appointment = require("../models/Appointment");  // ✅ Check Path
+const mongoose = require("mongoose"); // ✅ Keep only ONE import
+const Appointment = require("../models/Appointment");  // Ensure correct path
 const Notification = require("../models/Notification");  // ✅ Ensure it's correctly imported
 const User = require("../models/User");  // ✅ Needed for doctor details
 const schedule = require("node-schedule");
+
 
 
 const bookAppointment = async (req, res) => {
@@ -42,38 +44,46 @@ const bookAppointment = async (req, res) => {
     }
 };
 
-const sendDailyReminders = async () => {
-    try {
-        const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1); // Next day's reminders
-
-        const upcomingAppointments = await Appointment.find({ date: tomorrow.toISOString().split("T")[0] });
-
-        for (const appointment of upcomingAppointments) {
-            await Notification.create({
-                userId: appointment.userId,
-                message: `Reminder: Your appointment with Dr. ${appointment.doctorId} is scheduled for ${appointment.date} at ${appointment.time}.`,
-                type: "Reminder"
-            });
-        }
-        console.log("Daily reminders sent successfully.");
-    } catch (error) {
-        console.error("Error sending reminders:", error);
-    }
-};
 
 
-// Get all appointments
+
 const getAppointments = async (req, res) => {
     try {
-        const appointments = await Appointment.find({ userId: req.user.id });
+        console.log("🟡 Received User:", req.user);
 
-        res.status(200).json({ appointments });
+        // ✅ Extract userId from the authenticated user
+        let userId = req.user.id;
+
+        // ✅ Ensure userId exists and is valid
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized. No user ID found." });
+        }
+
+        // ✅ Convert userId to a valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: "Invalid User ID format." });
+        }
+
+        console.log("🔵 Fetching Appointments for userId:", userId);
+        const appointments = await Appointment.find({ userId: new mongoose.Types.ObjectId(userId) });
+
+        console.log("🟢 Appointments Found:", appointments);
+
+        if (appointments.length === 0) {
+            return res.status(404).json({ message: "No appointments found for this user." });
+        }
+
+        res.status(200).json({
+            message: "Appointments retrieved successfully.",
+            appointments,
+        });
     } catch (error) {
+        console.error("❌ Error fetching appointments:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
+
 
 // Cancel appointment
 const cancelAppointment = async (req, res) => {
@@ -137,4 +147,3 @@ const getUpcomingAppointments = async (req, res) => {
 };
 
 module.exports = { bookAppointment, getAppointments, cancelAppointment, rescheduleAppointment, getUpcomingAppointments };
-schedule.scheduleJob("0 9 * * *", sendDailyReminders);

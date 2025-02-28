@@ -12,7 +12,7 @@ const Appointments = () => {
     useEffect(() => {
         const fetchAppointments = async () => {
             try {
-                const response = await fetch("https://healthcare-backend-a66n.onrender.com/api/appointments");
+                const response = await fetch("https://healthcare-backend-a66n.onrender.com/api/getappointments");
                 if (!response.ok) {
                     throw new Error("Failed to fetch appointments");
                 }
