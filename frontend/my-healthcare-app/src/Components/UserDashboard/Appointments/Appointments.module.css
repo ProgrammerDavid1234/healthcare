@@ -1,80 +1,88 @@
 .appointmentsPage {
     display: flex;
+    min-height: 100vh;
+    background-color: #f8f9fa;
 }
 
 .content {
-    margin-left: 250px;
+    flex: 1;
     padding: 20px;
-    width: 100%;
 }
 
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #f8f9fa;
+    background: #fff;
     padding: 15px;
     border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
 }
 
 .searchContainer {
-    display: flex;
-    align-items: center;
-    border: 1px solid #ccc;
-    padding: 8px;
-    border-radius: 5px;
+    position: relative;
 }
 
 .searchContainer input {
-    border: none;
-    outline: none;
-    font-size: 16px;
-    padding: 5px;
+    padding: 8px 30px;
+    width: 250px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
 }
 
 .searchIcon {
-    color: #777;
-    margin-left: 5px;
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: gray;
 }
 
 .bookBtn {
     background-color: #28a745;
     color: white;
-    border: none;
     padding: 10px 15px;
+    border: none;
     border-radius: 5px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 5px;
+    font-size: 14px;
 }
 
 .bookBtn:hover {
     background-color: #218838;
 }
 
+.loading, .error, .noAppointments {
+    text-align: center;
+    font-size: 16px;
+    color: gray;
+}
+
+.tableContainer {
+    overflow-x: auto;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
 .table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
-    border-radius: 10px;
-    overflow: hidden;
 }
 
 .table th, .table td {
     padding: 12px;
-    text-align: left;
     border-bottom: 1px solid #ddd;
+    text-align: left;
 }
 
 .table th {
-    background-color: #007bff;
-    color: white;
-}
-
-.table tr:hover {
-    background-color: #f1f1f1;
+    background: #f1f1f1;
 }
 
 .actions {
@@ -82,28 +90,47 @@
     gap: 10px;
 }
 
-.editBtn {
-    background-color: #ffc107;
-    color: white;
-    border: none;
+.editBtn, .deleteBtn {
     padding: 5px 10px;
+    border: none;
     border-radius: 5px;
     cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.editBtn {
+    background-color: #007bff;
+    color: white;
+}
+
+.editBtn:hover {
+    background-color: #0056b3;
 }
 
 .deleteBtn {
     background-color: #dc3545;
     color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.editBtn:hover {
-    background-color: #e0a800;
 }
 
 .deleteBtn:hover {
     background-color: #c82333;
+}
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .searchContainer input {
+        width: 100%;
+    }
+
+    .table th, .table td {
+        padding: 10px;
+        font-size: 14px;
+    }
 }

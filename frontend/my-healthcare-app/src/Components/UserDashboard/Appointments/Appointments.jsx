@@ -1,49 +1,51 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../../../context/AuthContext";
 import Sidebar from "../Sidebar/Sidebar";
 import styles from "./Appointments.module.css";
 import { FaCalendarPlus, FaSearch, FaEdit, FaTrashAlt } from "react-icons/fa";
+import axios from "axios";
 
 const Appointments = () => {
-    const [appointments, setAppointments] = useState([]); // Default to an empty array
+    const { token } = useContext(AuthContext); // Get token from context
+    const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
         const fetchAppointments = async () => {
-            try {
-                const response = await fetch("https://healthcare-backend-a66n.onrender.com/api/getappointments");
-                if (!response.ok) {
-                    throw new Error("Failed to fetch appointments");
-                }
-                const data = await response.json();
-                console.log("API Response:", data); // Debugging
+            if (!token) return; // Don't fetch if token is missing
 
-                if (Array.isArray(data)) {
-                    setAppointments(data);  // Direct array response
-                } else if (Array.isArray(data.appointments)) {
-                    setAppointments(data.appointments); // If appointments are inside an object
+            try {
+                const response = await axios.get("https://healthcare-backend-a66n.onrender.com/api/getappointments", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                console.log("API Response:", response.data);
+
+                if (Array.isArray(response.data)) {
+                    setAppointments(response.data);
+                } else if (Array.isArray(response.data.appointments)) {
+                    setAppointments(response.data.appointments);
                 } else {
                     throw new Error("Invalid API response format");
                 }
             } catch (error) {
-                setError(error.message);
+                setError(error.response?.data?.message || "Failed to fetch appointments");
             } finally {
                 setLoading(false);
             }
         };
 
         fetchAppointments();
-    }, []);
+    }, [token]);
 
-    // Ensure `appointments` is an array before filtering
-    const filteredAppointments = Array.isArray(appointments)
-        ? appointments.filter(appointment =>
-            appointment.doctor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            appointment.date.includes(searchQuery)
-        )
-        : [];
-
+    const filteredAppointments = appointments.filter(
+        (appointment) =>
+            appointment.doctor?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            appointment.date?.includes(searchQuery)
+    );
+    
     return (
         <div className={styles.appointmentsPage}>
             <Sidebar />
@@ -84,7 +86,7 @@ const Appointments = () => {
                         <tbody>
                             {filteredAppointments.map((appointment, index) => (
                                 <tr key={index}>
-                                    <td>{appointment.doctor}</td>
+                                    <td>{appointment.doctorId}</td>
                                     <td>{appointment.date}</td>
                                     <td>{appointment.time}</td>
                                     <td>{appointment.reason}</td>
