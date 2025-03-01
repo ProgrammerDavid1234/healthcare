@@ -3,6 +3,7 @@ const Appointment = require("../models/Appointment");  // Ensure correct path
 const Notification = require("../models/Notification");  // ✅ Ensure it's correctly imported
 const User = require("../models/User");  // ✅ Needed for doctor details
 const schedule = require("node-schedule");
+const Doctor = require("../models/Doctor");  // ✅ Import the correct model
 
 
 
@@ -14,16 +15,24 @@ const bookAppointment = async (req, res) => {
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        // 🔵 Find the doctor in the database
-        const doctor = await User.findOne({ name: doctorName });
+        // 🔍 Find the doctor in the correct `Doctor` collection
+        const doctor = await Doctor.findOne({ name: doctorName });
 
         if (!doctor) {
-            return res.status(404).json({ message: "Doctor not found" });
+            return res.status(404).json({ message: `Doctor '${doctorName}' not found in the database` });
         }
 
-        // 🔵 Create appointment
+        // 🔍 Find the user who is booking the appointment
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // 📅 Create appointment
         const appointment = await Appointment.create({
-            userId: req.user.id,  // Patient ID
+            userId: user._id,
+            doctorId: doctor._id,  // ✅ Save doctor's ID
             doctorName,
             date,
             time,
@@ -31,26 +40,27 @@ const bookAppointment = async (req, res) => {
             symptoms
         });
 
-        // 🔵 Create notifications for both doctor and patient
+        // 🔔 Send notifications to both user and doctor
         await Notification.create([
             {
-                userId: req.user.id, // Patient notification
-                message: `Your appointment with Dr. ${doctorName} is confirmed for ${date} at ${time}.`,
+                userId: user._id,
+                message: `You have an appointment with Dr. ${doctorName} on ${date} at ${time}.`,
                 type: "Appointment"
             },
             {
-                userId: doctor._id, // Doctor notification
-                message: `You have a new appointment scheduled with a patient on ${date} at ${time}.`,
+                userId: doctor._id,  // ✅ Notify the doctor
+                message: `New appointment booked by ${user.name} on ${date} at ${time}.`,
                 type: "Appointment"
             }
         ]);
 
         res.status(201).json({ message: "Appointment booked", appointment });
+
     } catch (error) {
+        console.error("❌ Error booking appointment:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
-
 
 
 
@@ -97,18 +107,19 @@ const cancelAppointment = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const appointment = await Appointment.findByIdAndDelete(id);
+        const appointment = await Appointment.findById(id);
 
         if (!appointment) {
             return res.status(404).json({ message: "Appointment not found" });
         }
 
-        res.status(200).json({ message: "Appointment canceled" });
+        await Appointment.findByIdAndDelete(id);
+
+        res.status(200).json({ message: "Appointment canceled successfully" });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
-
 const rescheduleAppointment = async (req, res) => {
     try {
         const { id } = req.params;

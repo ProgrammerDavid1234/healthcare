@@ -42,10 +42,32 @@ const Appointments = () => {
 
     const filteredAppointments = appointments.filter(
         (appointment) =>
-            appointment.doctor?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            appointment.doctor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             appointment.date?.includes(searchQuery)
     );
-    
+    const handleCancel = async (appointmentId) => {
+        if (!token) {
+            alert("Unauthorized. Please log in again.");
+            return;
+        }
+
+        if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+
+        try {
+            await axios.delete(`https://healthcare-backend-a66n.onrender.com/api/appointments/${appointmentId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setAppointments((prevAppointments) =>
+                prevAppointments.filter((appointment) => appointment._id !== appointmentId)
+            );
+        } catch (error) {
+            console.error("Error canceling appointment:", error);
+            alert(error.response?.data?.message || "Failed to cancel appointment");
+        }
+    };
+
+
     return (
         <div className={styles.appointmentsPage}>
             <Sidebar />
@@ -86,7 +108,7 @@ const Appointments = () => {
                         <tbody>
                             {filteredAppointments.map((appointment, index) => (
                                 <tr key={index}>
-                                    <td>{appointment.doctorId}</td>
+                                    <td>{appointment.doctorName}</td>
                                     <td>{appointment.date}</td>
                                     <td>{appointment.time}</td>
                                     <td>{appointment.reason}</td>
@@ -94,9 +116,10 @@ const Appointments = () => {
                                         <button className={styles.editBtn}>
                                             <FaEdit /> Reschedule
                                         </button>
-                                        <button className={styles.deleteBtn}>
+                                        <button className={styles.deleteBtn} onClick={() => handleCancel(appointment._id)}>
                                             <FaTrashAlt /> Cancel
                                         </button>
+
                                     </td>
                                 </tr>
                             ))}
