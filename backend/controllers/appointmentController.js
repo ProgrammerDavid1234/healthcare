@@ -16,7 +16,7 @@ const bookAppointment = async (req, res) => {
 
         const appointment = await Appointment.create({
             userId: req.user.id,  // Patient ID from token
-            doctorId,
+            doctorName,
             date,
             time,
             reason,
