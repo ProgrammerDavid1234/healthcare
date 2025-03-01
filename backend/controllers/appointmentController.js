@@ -8,7 +8,7 @@ const schedule = require("node-schedule");
 
 const bookAppointment = async (req, res) => {
     try {
-        const { doctorName, date, time, reason, symptoms } = req.body;
+        const { doctorName, doctorId, date, time, reason, symptoms } = req.body;
 
         if (!doctorId || !date || !time) {
             return res.status(400).json({ message: "All fields are required" });
@@ -17,6 +17,7 @@ const bookAppointment = async (req, res) => {
         const appointment = await Appointment.create({
             userId: req.user.id,  // Patient ID from token
             doctorName,
+            doctorId,
             date,
             time,
             reason,
