@@ -8,36 +8,42 @@ const schedule = require("node-schedule");
 
 const bookAppointment = async (req, res) => {
     try {
-        const { doctorName, doctorId, date, time, reason, symptoms } = req.body;
+        const { doctorName, date, time, reason, symptoms } = req.body;
 
-        if (!doctorId || !date || !time) {
+        if (!doctorName || !date || !time) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
+        // 🔵 Find the doctor in the database
+        const doctor = await User.findOne({ name: doctorName });
+
+        if (!doctor) {
+            return res.status(404).json({ message: "Doctor not found" });
+        }
+
+        // 🔵 Create appointment
         const appointment = await Appointment.create({
-            userId: req.user.id,  // Patient ID from token
+            userId: req.user.id,  // Patient ID
             doctorName,
-            doctorId,
             date,
             time,
             reason,
             symptoms
         });
 
-        // ✅ Ensure Notification Model is Available Before Using It
-        if (!Notification) {
-            return res.status(500).json({ message: "Notification model not found" });
-        }
-
-        try {
-            await Notification.create({
-                userId: doctorId,  // Doctor receives the notification
-                message: `You have a new appointment scheduled on ${date} at ${time}.`,
+        // 🔵 Create notifications for both doctor and patient
+        await Notification.create([
+            {
+                userId: req.user.id, // Patient notification
+                message: `Your appointment with Dr. ${doctorName} is confirmed for ${date} at ${time}.`,
                 type: "Appointment"
-            });
-        } catch (notifyError) {
-            console.error("Error creating notification:", notifyError);
-        }
+            },
+            {
+                userId: doctor._id, // Doctor notification
+                message: `You have a new appointment scheduled with a patient on ${date} at ${time}.`,
+                type: "Appointment"
+            }
+        ]);
 
         res.status(201).json({ message: "Appointment booked", appointment });
     } catch (error) {
