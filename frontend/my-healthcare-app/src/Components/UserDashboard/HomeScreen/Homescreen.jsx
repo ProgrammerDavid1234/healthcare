@@ -3,6 +3,7 @@ import { AuthContext } from "../../../context/AuthContext";
 import Sidebar from "../Sidebar/Sidebar";
 import styles from "./Homescreen.module.css";
 import { FaUserMd, FaHistory, FaCalendarCheck } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 const Homescreen = () => {
     const { user } = useContext(AuthContext);
@@ -65,11 +66,13 @@ const Homescreen = () => {
 
                 {/* Cards Section */}
                 <div className={styles.cards}>
-                    <div className={styles.card}>
-                        <FaCalendarCheck className={styles.icon} />
-                        <h3>Appointments</h3>
-                        <p>Check upcoming and past appointments.</p>
-                    </div>
+                    <Link to='/appointment'>
+                        <div className={styles.card}>
+                            <FaCalendarCheck className={styles.icon} />
+                            <h3>Appointments</h3>
+                            <p>Check upcoming and past appointments.</p>
+                        </div>
+                    </Link>
                     <div className={styles.card}>
                         <FaHistory className={styles.icon} />
                         <h3>Medical History</h3>

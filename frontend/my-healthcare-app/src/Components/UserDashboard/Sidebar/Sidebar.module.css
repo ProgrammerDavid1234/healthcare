@@ -1,13 +1,14 @@
 .sidebar {
-    width: 250px;
-    height: 100vh;
-    background: linear-gradient(to bottom, #222, #333);
-    color: white;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
+  width: 250px;
+  height: 100vh;
+  background: linear-gradient(to bottom, #222, #333);
+  color: white;
+  padding: 20px;
+  display: flex;
+  position: fixed; /* Fixes sidebar in place */
+  flex-direction: column;
+  justify-content: space-between;
+}
   
   .logo {
     font-size: 18px;

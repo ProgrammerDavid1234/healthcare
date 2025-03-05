@@ -14,7 +14,7 @@ const Sidebar = () => {
 
     return (
         <div className={styles.sidebar}>
-            <h2 className={styles.logo}>MyDoc</h2>
+            <h2 className={styles.logo}></h2>
             <ul className={styles.menu}>
                 {/* Dashboard */}
                 <Link to="/userdashboard" onClick={() => handleItemClick("/userdashboard")}>

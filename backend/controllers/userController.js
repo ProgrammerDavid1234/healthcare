@@ -173,19 +173,60 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   user.gender = req.body.gender || user.gender;
   user.role = req.body.role || user.role;
 
+  // New fields
+  user.dateOfBirth = req.body.dateOfBirth || user.dateOfBirth;
+  user.address = req.body.address || user.address;
+  user.bloodType = req.body.bloodType || user.bloodType;
+  user.emergencyContact = req.body.emergencyContact || user.emergencyContact;
+
+  // Handle arrays (convert string to array if provided)
+  if (req.body.allergies) {
+    user.allergies = req.body.allergies.split(',').map(item => item.trim());
+  }
+
+  if (req.body.currentMedication) {
+    user.currentMedication = req.body.currentMedication.split(',').map(item => item.trim());
+  }
+
   if (req.body.medicalHistory) {
     user.medicalHistory = req.body.medicalHistory.split(',').map(item => item.trim());
   }
 
+  if (req.body.prescriptions) {
+    user.prescriptions = req.body.prescriptions.split(',').map(item => item.trim());
+  }
+
+  // Update password if provided
   if (req.body.password) {
     user.password = req.body.password;
   }
 
+  // Save the updated user
   const updatedUser = await user.save();
-  res.json({ success: true, user });
+
+  // Return the updated user data (excluding sensitive fields like password)
+  const userResponse = {
+    _id: updatedUser._id,
+    name: updatedUser.name,
+    email: updatedUser.email,
+    phone: updatedUser.phone,
+    age: updatedUser.age,
+    gender: updatedUser.gender,
+    role: updatedUser.role,
+    dateOfBirth: updatedUser.dateOfBirth,
+    address: updatedUser.address,
+    bloodType: updatedUser.bloodType,
+    allergies: updatedUser.allergies,
+    currentMedication: updatedUser.currentMedication,
+    emergencyContact: updatedUser.emergencyContact,
+    medicalHistory: updatedUser.medicalHistory,
+    prescriptions: updatedUser.prescriptions,
+    createdAt: updatedUser.createdAt,
+    updatedAt: updatedUser.updatedAt,
+  };
+
+  res.json({ success: true, user: userResponse });
 });
-
-
 const getMedicalHistory = async (req, res) => {
   const { userId } = req.query; // Get userId from query parameters
   try {

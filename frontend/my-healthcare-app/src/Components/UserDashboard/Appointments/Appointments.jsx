@@ -4,24 +4,31 @@ import Sidebar from "../Sidebar/Sidebar";
 import styles from "./Appointments.module.css";
 import { FaCalendarPlus, FaSearch, FaEdit, FaTrashAlt } from "react-icons/fa";
 import axios from "axios";
+import BookAppointmentModal from "../BookAppointmentModal/BookAppointmentModal";
+import CancelConfirmationModal from "../CancelConfirmationModal/CancelConfirmationModal"; // Import the modal
+import RescheduleAppointmentModal from "../RescheduleAppointmentModal/RescheduleAppointmentModal";
 
 const Appointments = () => {
-    const { token } = useContext(AuthContext); // Get token from context
+    const { token } = useContext(AuthContext);
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
+    const [appointmentToCancel, setAppointmentToCancel] = useState(null);
+    const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+    const [appointmentToReschedule, setAppointmentToReschedule] = useState(null);
+
 
     useEffect(() => {
         const fetchAppointments = async () => {
-            if (!token) return; // Don't fetch if token is missing
+            if (!token) return;
 
             try {
                 const response = await axios.get("https://healthcare-backend-a66n.onrender.com/api/getappointments", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-
-                console.log("API Response:", response.data);
 
                 if (Array.isArray(response.data)) {
                     setAppointments(response.data);
@@ -40,31 +47,48 @@ const Appointments = () => {
         fetchAppointments();
     }, [token]);
 
+    const handleCancel = async () => {
+        if (!token || !appointmentToCancel) return;
+
+        try {
+            await axios.delete(`https://healthcare-backend-a66n.onrender.com/api/appointments/${appointmentToCancel}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setAppointments((prevAppointments) =>
+                prevAppointments.filter((appointment) => appointment._id !== appointmentToCancel)
+            );
+
+            setCancelModalOpen(false);
+        } catch (error) {
+            alert(error.response?.data?.message || "Failed to cancel appointment");
+        }
+    };
+
+    const openCancelModal = (appointmentId) => {
+        setAppointmentToCancel(appointmentId);
+        setCancelModalOpen(true);
+    };
+
+    const handleAppointmentBooked = (newAppointment) => {
+        setAppointments((prev) => [...prev, newAppointment]);
+    };
+
     const filteredAppointments = appointments.filter(
         (appointment) =>
             appointment.doctor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             appointment.date?.includes(searchQuery)
     );
-    const handleCancel = async (appointmentId) => {
-        if (!token) {
-            alert("Unauthorized. Please log in again.");
-            return;
-        }
-
-        if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
-
-        try {
-            await axios.delete(`https://healthcare-backend-a66n.onrender.com/api/appointments/${appointmentId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            setAppointments((prevAppointments) =>
-                prevAppointments.filter((appointment) => appointment._id !== appointmentId)
-            );
-        } catch (error) {
-            console.error("Error canceling appointment:", error);
-            alert(error.response?.data?.message || "Failed to cancel appointment");
-        }
+    const openRescheduleModal = (appointmentId) => {
+        setAppointmentToReschedule(appointmentId);
+        setRescheduleModalOpen(true);
+    };
+    const handleAppointmentRescheduled = (updatedAppointment) => {
+        setAppointments((prevAppointments) =>
+            prevAppointments.map((appointment) =>
+                appointment._id === updatedAppointment._id ? updatedAppointment : appointment
+            )
+        );
     };
 
 
@@ -83,7 +107,7 @@ const Appointments = () => {
                         />
                         <FaSearch className={styles.searchIcon} />
                     </div>
-                    <button className={styles.bookBtn}>
+                    <button className={styles.bookBtn} onClick={() => setIsModalOpen(true)}>
                         <FaCalendarPlus /> Book New Appointment
                     </button>
                 </div>
@@ -113,13 +137,19 @@ const Appointments = () => {
                                     <td>{appointment.time}</td>
                                     <td>{appointment.reason}</td>
                                     <td className={styles.actions}>
-                                        <button className={styles.editBtn}>
+                                        <button
+                                            className={styles.editBtn}
+                                            onClick={() => openRescheduleModal(appointment._id)}
+                                        >
                                             <FaEdit /> Reschedule
                                         </button>
-                                        <button className={styles.deleteBtn} onClick={() => handleCancel(appointment._id)}>
+
+                                        <button
+                                            className={styles.deleteBtn}
+                                            onClick={() => openCancelModal(appointment._id)}
+                                        >
                                             <FaTrashAlt /> Cancel
                                         </button>
-
                                     </td>
                                 </tr>
                             ))}
@@ -127,6 +157,28 @@ const Appointments = () => {
                     </table>
                 )}
             </div>
+
+            {/* Modals */}
+            <BookAppointmentModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                token={token}
+                onAppointmentBooked={handleAppointmentBooked}
+            />
+
+            <CancelConfirmationModal
+                isOpen={cancelModalOpen}
+                onClose={() => setCancelModalOpen(false)}
+                onConfirm={handleCancel}
+            />
+            <RescheduleAppointmentModal
+                isOpen={rescheduleModalOpen}
+                onClose={() => setRescheduleModalOpen(false)}
+                appointmentId={appointmentToReschedule}
+                token={token}
+                onReschedule={handleAppointmentRescheduled}
+            />
+
         </div>
     );
 };
