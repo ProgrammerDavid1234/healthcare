@@ -204,6 +204,8 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   // Save the updated user
   const updatedUser = await user.save();
 
+
+
   // Return the updated user data (excluding sensitive fields like password)
   const userResponse = {
     _id: updatedUser._id,
