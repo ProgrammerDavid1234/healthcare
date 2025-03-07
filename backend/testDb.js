@@ -1,17 +1,15 @@
-const { MongoClient } = require('mongodb');
+require("dotenv").config();
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const uri = 'mongodb+srv://olonadenifemi:david1234@cluster0.104ho.mongodb.net/healthcareDB?retryWrites=true&w=majority';
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-async function run() {
-  const client = new MongoClient(uri);
-  try {
-    await client.connect();
-    console.log('Connected to MongoDB');
-  } catch (err) {
-    console.error('Error connecting to MongoDB:', err);
-  } finally {
-    await client.close();
-  }
+async function listModels() {
+    try {
+        const models = await genAI.listModels();
+        console.log("Available Models:", models);
+    } catch (error) {
+        console.error("Error fetching models:", error);
+    }
 }
 
-run();
+listModels();
