@@ -6,31 +6,39 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 async function analyzeConditions(symptoms) {
     const prompt = `
     A patient has these symptoms: ${symptoms.join(", ")}.
-    
-    1. List possible medical conditions. Provide only a comma-separated list.
-    2. List possible treatments for these conditions. Provide only a comma-separated list.
-    3. List possible medications that can be used. Provide only a comma-separated list.`;
+    - **List the possible medical conditions:** (Provide a comma-separated list)
+    - **List the possible treatments for these conditions:** (Provide a comma-separated list)
+    - **List the medications commonly used for these conditions:** (Provide a comma-separated list)
+    Please format your response strictly as:
+    Conditions: [list]
+    Treatments: [list]
+    Medications: [list]
+    `;
 
     try {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const response = await model.generateContent(prompt);
-        const responseText = response.response.text().trim(); // Extract text response
+        const responseText = response.response.text(); // Extract text response
 
-        // Ensure we split response correctly
-        const [conditionsText, treatmentsText, medicationsText] = responseText.split("\n").map(line => line.trim());
+        console.log("AI Raw Response:", responseText); // Debugging output
 
-        // Parse response to structured lists
-        const conditions = conditionsText ? conditionsText.split(",").map(cond => cond.trim()).filter(Boolean) : [];
-        const treatments = treatmentsText ? treatmentsText.split(",").map(treat => treat.trim()).filter(Boolean) : [];
-        const medications = medicationsText ? medicationsText.split(",").map(med => med.trim()).filter(Boolean) : [];
+        // Extract structured responses
+        const conditionsMatch = responseText.match(/Conditions:\s*(.*)/);
+        const treatmentsMatch = responseText.match(/Treatments:\s*(.*)/);
+        const medicationsMatch = responseText.match(/Medications:\s*(.*)/);
+
+        // Parse the extracted data
+        const conditions = conditionsMatch ? conditionsMatch[1].split(",").map(cond => cond.trim()) : [];
+        const treatments = treatmentsMatch ? treatmentsMatch[1].split(",").map(treat => treat.trim()) : [];
+        const medications = medicationsMatch ? medicationsMatch[1].split(",").map(med => med.trim()) : [];
 
         return { conditions, treatments, medications };
     } catch (error) {
         console.error("AI Error:", error);
-        return {
-            conditions: ["Unknown Condition"],
-            treatments: ["No suggested treatments found"],
-            medications: ["No suggested medications found"]
+        return { 
+            conditions: ["Unknown Condition"], 
+            treatments: ["No suggested treatments found"], 
+            medications: ["No suggested medications found"] 
         };
     }
 }
