@@ -15,13 +15,13 @@ router.post("/analyze", async (req, res) => {
         // Ensure symptoms are an array
         const symptomsArray = Array.isArray(symptoms) ? symptoms : [symptoms];
 
-        // Get possible conditions based on symptoms
-        const conditions = await analyzeConditions(symptomsArray);
+        // Get AI-generated medical conditions, treatments, and medications
+        const { conditions, treatments, medications } = await analyzeConditions(symptomsArray);
 
         // Get AI-generated recommended tests
         const tests = await getRecommendedTests(symptomsArray, age, gender, medicalHistory);
 
-        res.json({ conditions, tests });
+        res.json({ conditions, treatments, medications, tests });
     } catch (error) {
         console.error("Error analyzing symptoms:", error);
         res.status(500).json({ error: "Failed to analyze symptoms." });
