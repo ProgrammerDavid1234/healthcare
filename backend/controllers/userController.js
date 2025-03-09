@@ -162,9 +162,13 @@ const getUserProfile = async (req, res) => {
 
 
 const updateUserProfile = asyncHandler(async (req, res) => {
-  console.log("User from token:", req.user); // Debugging line
+  console.log("User from token:", req.user);
 
-  const user = await User.findById(req.user?.id);
+  if (!req.user || !req.user.id) {
+    return res.status(401).json({ message: "Unauthorized: No user found in token" });
+  }
+
+  const user = await User.findById(req.user.id);
   if (!user) {
     return res.status(404).json({ message: 'User not found' });
   }
@@ -176,63 +180,52 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   user.age = req.body.age || user.age;
   user.gender = req.body.gender || user.gender;
   user.role = req.body.role || user.role;
-
-  // New fields
   user.dateOfBirth = req.body.dateOfBirth || user.dateOfBirth;
   user.address = req.body.address || user.address;
   user.bloodType = req.body.bloodType || user.bloodType;
   user.emergencyContact = req.body.emergencyContact || user.emergencyContact;
 
-  // Handle arrays (convert string to array if provided)
+  // Handle arrays correctly
   if (req.body.allergies) {
-    user.allergies = req.body.allergies.split(',').map(item => item.trim());
+    user.allergies = Array.isArray(req.body.allergies)
+      ? req.body.allergies
+      : req.body.allergies.split(',').map(item => item.trim());
   }
 
   if (req.body.currentMedication) {
-    user.currentMedication = req.body.currentMedication.split(',').map(item => item.trim());
+    user.currentMedication = Array.isArray(req.body.currentMedication)
+      ? req.body.currentMedication
+      : req.body.currentMedication.split(',').map(item => item.trim());
   }
 
   if (req.body.medicalHistory) {
-    user.medicalHistory = req.body.medicalHistory.split(',').map(item => item.trim());
+    user.medicalHistory = Array.isArray(req.body.medicalHistory)
+      ? req.body.medicalHistory
+      : req.body.medicalHistory.split(',').map(item => item.trim());
   }
 
   if (req.body.prescriptions) {
-    user.prescriptions = req.body.prescriptions.split(',').map(item => item.trim());
+    user.prescriptions = Array.isArray(req.body.prescriptions)
+      ? req.body.prescriptions
+      : req.body.prescriptions.split(',').map(item => item.trim());
   }
 
-  // Update password if provided
+  // Update password securely
   if (req.body.password) {
-    user.password = req.body.password;
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(req.body.password, salt);
   }
 
-  // Save the updated user
-  const updatedUser = await user.save();
-
-
-
-  // Return the updated user data (excluding sensitive fields like password)
-  const userResponse = {
-    _id: updatedUser._id,
-    name: updatedUser.name,
-    email: updatedUser.email,
-    phone: updatedUser.phone,
-    age: updatedUser.age,
-    gender: updatedUser.gender,
-    role: updatedUser.role,
-    dateOfBirth: updatedUser.dateOfBirth,
-    address: updatedUser.address,
-    bloodType: updatedUser.bloodType,
-    allergies: updatedUser.allergies,
-    currentMedication: updatedUser.currentMedication,
-    emergencyContact: updatedUser.emergencyContact,
-    medicalHistory: updatedUser.medicalHistory,
-    prescriptions: updatedUser.prescriptions,
-    createdAt: updatedUser.createdAt,
-    updatedAt: updatedUser.updatedAt,
-  };
-
-  res.json({ success: true, user: userResponse });
+  // Save user and handle errors
+  try {
+    const updatedUser = await user.save();
+    res.json({ success: true, user: updatedUser });
+  } catch (error) {
+    console.error("Error saving user:", error);
+    res.status(500).json({ message: "Error updating user", error: error.message });
+  }
 });
+
 const getMedicalHistory = async (req, res) => {
   const { userId } = req.query; // Get userId from query parameters
   try {
