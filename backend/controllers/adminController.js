@@ -51,6 +51,25 @@ const getSystemStats = async (req, res) => {
     }
 };
 
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find().select("-password"); // Exclude passwords for security
+        res.status(200).json({ message: "Users retrieved successfully", users });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+// ✅ Get all doctors
+const getAllDoctors = async (req, res) => {
+    try {
+        const doctors = await User.find({ role: "doctor" }).select("-password"); // Only doctors
+        res.status(200).json({ message: "Doctors retrieved successfully", doctors });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
 // ✅ Admin views a user's medical history
 const getUserMedicalHistory = async (req, res) => {
     try {
@@ -128,5 +147,7 @@ module.exports = {
     approveDiagnosis, 
     addDoctor, 
     getPatientReport, 
-    reviewComplaint 
+    reviewComplaint,
+    getAllUsers, 
+    getAllDoctors
 };

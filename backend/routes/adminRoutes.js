@@ -8,7 +8,9 @@ const {
     approveDiagnosis,
     addDoctor,
     getPatientReport,
-    reviewComplaint
+    reviewComplaint,
+    getAllDoctors,
+    getAllUsers
 } = require("../controllers/adminController"); // ✅ Make sure this path is correct
 
 // Define routes
@@ -20,5 +22,8 @@ router.post("/diagnosis/approve", approveDiagnosis);
 router.post("/add-doctor", addDoctor);
 router.get("/patient-report/:patientId", getPatientReport);
 router.post("/review-complaint", reviewComplaint);
+router.get("/users", getAllUsers);
+router.get("/doctors", getAllDoctors);
+
 
 module.exports = router;
