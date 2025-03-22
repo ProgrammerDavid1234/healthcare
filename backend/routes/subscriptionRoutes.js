@@ -2,16 +2,15 @@ const express = require("express");
 const router = express.Router();
 const stripe = require("../config/stripe");
 const User = require("../models/User");
-const subscriptionController = require("../controllers/subscriptionController");
+const { protect } = require("../middleware/authMiddleware");
 
-const priceIds = {
-    basic: process.env.STRIPE_BASIC_PRICE_ID,
-    pro: process.env.STRIPE_PRO_PRICE_ID,
-    enterprise: process.env.STRIPE_ENTERPRISE_PRICE_ID
-};
+// Import subscriptionController functions correctly
+const { createSubscription, handleStripeWebhook, getUserSubscription } = require("../controllers/subscriptionController");
 
-router.post("/subscribe", subscriptionController.createSubscription);
-router.post("/webhook", subscriptionController.handleStripeWebhook);
+// Define routes
+router.post("/subscribe", createSubscription);
+router.post("/webhook", handleStripeWebhook);
+router.get("/user/subscription", protect, getUserSubscription);
 
 router.post("/create", async (req, res) => {
     const { userId, plan } = req.body;
