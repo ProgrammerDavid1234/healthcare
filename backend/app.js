@@ -13,6 +13,8 @@ const interactionsRoutes = require("./routes/interactionsRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const authRoutes = require("./routes/authRoutes.js");
+const subscriptionRoutes = require("./routes/subscriptionRoutes");
+
 
 // Load environment variables
 console.log('Loaded MongoDB URI:', process.env.MONGO_URI);
@@ -49,9 +51,11 @@ app.use("/api", interactionsRoutes);
 app.use("/api", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin", authRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api", appointmentRoutes);
 app.use('/uploads', express.static('uploads'));
 app.use('/api/doctors', doctorRoutes);
+
 
 // Start the server
 const PORT = process.env.PORT || 5000;

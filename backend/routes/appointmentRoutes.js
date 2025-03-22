@@ -1,5 +1,5 @@
 const express = require('express');
-const { bookAppointment, getAppointments, cancelAppointment, rescheduleAppointment, getUpcomingAppointments } = require('../controllers/appointmentController');
+const { bookAppointment, getAppointments, cancelAppointment, rescheduleAppointment, getUpcomingAppointments, getDoctorAppointments } = require('../controllers/appointmentController');
 const { protect } = require('../middleware/authMiddleware'); // Import protect middleware
 
 
@@ -9,6 +9,7 @@ router.post("/appointments", protect, bookAppointment);
 router.get('/getappointments', protect, getAppointments);
 router.delete("/appointments/:id", cancelAppointment);
 router.put("/appointments/:id/reschedule", protect, rescheduleAppointment);
+router.get("/doctor", protect, getDoctorAppointments);
 
 // Route to fetch upcoming appointments
 router.get('/upcoming', protect, getUpcomingAppointments);

@@ -163,5 +163,34 @@ const getUpcomingAppointments = async (req, res) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+const getDoctorAppointments = async (req, res) => {
+    try {
+        const doctorId = req.user.id; // The authenticated doctor
 
-module.exports = { bookAppointment, getAppointments, cancelAppointment, rescheduleAppointment, getUpcomingAppointments };
+        // Ensure the requesting user is a doctor
+        const doctor = await Doctor.findById(doctorId);
+        if (!doctor) {
+            return res.status(403).json({ message: "Access denied. Not a doctor." });
+        }
+
+        // Fetch all appointments where this doctor is assigned
+        const appointments = await Appointment.find({ doctorId })
+            .sort({ date: 1, time: 1 }) // Sort by upcoming first
+            .populate("userId", "name email"); // Include patient details
+
+        if (appointments.length === 0) {
+            return res.status(404).json({ message: "No appointments found." });
+        }
+
+        res.status(200).json({
+            message: "Appointments retrieved successfully",
+            appointments,
+        });
+    } catch (error) {
+        console.error("❌ Error fetching doctor's appointments:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+
+module.exports = { bookAppointment, getAppointments, cancelAppointment, rescheduleAppointment, getUpcomingAppointments, getDoctorAppointments };

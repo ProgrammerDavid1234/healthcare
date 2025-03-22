@@ -118,3 +118,6 @@ Your backend is quite comprehensive, covering authentication, user and doctor ma
 Yes! Since the backend is mostly complete, you can **start building the frontend** while fine-tuning any missing backend features along the way. 🚀 
 
 Would you like help setting up the frontend structure in **React** or any specific framework? Let me know how you'd like to proceed!
+
+/api/subscriptions/subscribe
+{ "userId": "USER_ID", "priceId": "PRICE_ID" }
