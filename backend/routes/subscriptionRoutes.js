@@ -67,7 +67,7 @@ router.post("/create-checkout-session", protect, async (req, res) => {
         };
 
         if (!priceIds[plan]) {
-            return res.status(400).json({ error: "Invalid subscription plan" });
+            return res.status(400).json({ error: "Invalid subscriptions plan" });
         }
 
         const session = await stripe.checkout.sessions.create({
