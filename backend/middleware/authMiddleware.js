@@ -39,26 +39,35 @@ const authMiddleware = async (req, res, next) => {
 };
 
 const protect = asyncHandler(async (req, res, next) => {
+    console.log("🔑 Checking Authentication...");
+    
     let token = req.headers.authorization;
+    console.log("🔑 Token Received:", token);
 
     if (!token || !token.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'No token, authorization denied' });
+        console.log("❌ No token provided");
+        return res.status(401).json({ message: "No token, authorization denied" });
     }
 
     try {
-        token = token.split(' ')[1]; // Extract token from "Bearer <token>"
+        token = token.split(' ')[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log("✅ Decoded Token:", decoded);
 
         req.user = await User.findById(decoded.id).select('-password');
         if (!req.user) {
-            return res.status(401).json({ message: 'User not found' });
+            console.log("❌ User not found");
+            return res.status(401).json({ message: "User not found" });
         }
 
+        console.log("✅ User Authenticated:", req.user);
         next();
     } catch (error) {
-        res.status(401).json({ message: 'Invalid token' });
+        console.log("❌ Invalid Token", error);
+        res.status(401).json({ message: "Invalid token" });
     }
 });
+
 const adminAuth = (req, res, next) => {
     if (req.user && (req.user.role === "admin" || req.user.role === "moderator")) {
         next();

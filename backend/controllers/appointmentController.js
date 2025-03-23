@@ -7,55 +7,30 @@ const Doctor = require("../models/Doctor");  // ✅ Import the correct model
 
 
 
+
 const bookAppointment = async (req, res) => {
     try {
-        const { doctorName, date, time, reason, symptoms } = req.body;
+        console.log("📌 Booking Appointment - Request Body:", req.body);
+        console.log("📌 User from Token:", req.user);
 
-        if (!doctorName || !date || !time) {
+        if (!req.body.doctorName || !req.body.date || !req.body.time) {
+            console.log("❌ Missing fields");
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        // 🔍 Find the doctor in the correct `Doctor` collection
-        const doctor = await Doctor.findOne({ name: doctorName });
+        const doctor = await Doctor.findOne({ name: req.body.doctorName });
+        console.log("📌 Doctor Found:", doctor);
 
         if (!doctor) {
-            return res.status(404).json({ message: `Doctor '${doctorName}' not found in the database` });
+            console.log("❌ Doctor not found");
+            return res.status(404).json({ message: "Doctor not found" });
         }
 
-        // 🔍 Find the user who is booking the appointment
-        const user = await User.findById(req.user.id);
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        // 📅 Create appointment
-        const appointment = await Appointment.create({
-            userId: user._id,
-            doctorId: doctor._id,  // ✅ Save doctor's ID
-            doctorName,
-            date,
-            time,
-            reason,
-            symptoms
-        });
-
-        // 🔔 Send notifications to both user and doctor
-        await Notification.create([
-            {
-                userId: user._id,
-                message: `You have an appointment with Dr. ${doctorName} on ${date} at ${time}.`,
-                type: "Appointment"
-            },
-            {
-                userId: doctor._id,  // ✅ Notify the doctor
-                message: `New appointment booked by ${user.name} on ${date} at ${time}.`,
-                type: "Appointment"
-            }
-        ]);
+        console.log("✅ Booking appointment...");
+        const appointment = await Appointment.create(req.body);
+        console.log("✅ Appointment Created:", appointment);
 
         res.status(201).json({ message: "Appointment booked", appointment });
-
     } catch (error) {
         console.error("❌ Error booking appointment:", error);
         res.status(500).json({ message: "Server error", error: error.message });
@@ -66,17 +41,14 @@ const bookAppointment = async (req, res) => {
 
 const getAppointments = async (req, res) => {
     try {
-        console.log("🟡 Received User:", req.user);
+        console.log("📢 Received request to get appointments"); // Add this
+        console.log("🟡 User ID from token:", req.user?.id); // Log user ID
 
-        // ✅ Extract userId from the authenticated user
         let userId = req.user.id;
-
-        // ✅ Ensure userId exists and is valid
         if (!userId) {
             return res.status(401).json({ message: "Unauthorized. No user ID found." });
         }
 
-        // ✅ Convert userId to a valid ObjectId
         if (!mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({ message: "Invalid User ID format." });
         }

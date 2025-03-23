@@ -9,7 +9,7 @@ router.post("/appointments", protect, bookAppointment);
 router.get('/getappointments', protect, getAppointments);
 router.delete("/appointments/:id", cancelAppointment);
 router.put("/appointments/:id/reschedule", protect, rescheduleAppointment);
-router.get("/doctor", protect, getDoctorAppointments);
+// router.get("/doctor", protect, getDoctorAppointments);
 
 // Route to fetch upcoming appointments
 router.get('/upcoming', protect, getUpcomingAppointments);
