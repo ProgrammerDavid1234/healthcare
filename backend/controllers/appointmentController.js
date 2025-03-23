@@ -9,58 +9,73 @@ const Doctor = require("../models/Doctor");  // ✅ Import the correct model
 
 const bookAppointment = async (req, res) => {
     try {
-        const { doctorName, date, time, reason, symptoms } = req.body;
-
-        if (!doctorName || !date || !time) {
-            return res.status(400).json({ message: "All fields are required" });
-        }
-
-        // 🔍 Find the doctor in the correct `Doctor` collection
-        const doctor = await Doctor.findOne({ name: doctorName });
-
-        if (!doctor) {
-            return res.status(404).json({ message: `Doctor '${doctorName}' not found in the database` });
-        }
-
-        // 🔍 Find the user who is booking the appointment
-        const user = await User.findById(req.user.id);
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        // 📅 Create appointment
-        const appointment = await Appointment.create({
-            userId: user._id,
-            doctorId: doctor._id,  // ✅ Save doctor's ID
-            doctorName,
-            date,
-            time,
-            reason,
-            symptoms
+      const { userId, doctorName, date, time, reason, symptoms } = req.body;
+  
+      // Validate required fields
+      if (!userId || !doctorName || !date || !time) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+  
+      // 🔍 Find the user
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+  
+      // 🔍 Find the doctor
+      const doctor = await Doctor.findOne({ name: doctorName });
+      if (!doctor) {
+        return res.status(404).json({ message: `Doctor '${doctorName}' not found in the database` });
+      }
+  
+      // 🎯 Define appointment limits based on subscription plan
+      const planLimits = {
+        basic: 5,         // Max 5 appointments per month
+        pro: 15,          // Max 15 appointments per month
+        enterprise: 9999, // Unlimited
+      };
+  
+      // 🛑 Check if the user has exceeded their appointment limit
+      if (user.appointmentsCount >= planLimits[user.subscription.plan]) {
+        return res.status(403).json({
+          error: "You have reached your appointment limit. Upgrade your plan to book more.",
         });
-
-        // 🔔 Send notifications to both user and doctor
-        await Notification.create([
-            {
-                userId: user._id,
-                message: `You have an appointment with Dr. ${doctorName} on ${date} at ${time}.`,
-                type: "Appointment"
-            },
-            {
-                userId: doctor._id,  // ✅ Notify the doctor
-                message: `New appointment booked by ${user.name} on ${date} at ${time}.`,
-                type: "Appointment"
-            }
-        ]);
-
-        res.status(201).json({ message: "Appointment booked", appointment });
-
+      }
+  
+      // 📅 Create the appointment
+      const appointment = await Appointment.create({
+        userId: user._id,
+        doctorId: doctor._id,
+        doctorName,
+        date,
+        time,
+        reason,
+        symptoms,
+      });
+  
+      // 🔔 Send notifications to both user and doctor
+      await Notification.create([
+        {
+          userId: user._id,
+          message: `You have an appointment with Dr. ${doctorName} on ${date} at ${time}.`,
+          type: "Appointment",
+        },
+        {
+          userId: doctor._id,
+          message: `New appointment booked by ${user.name} on ${date} at ${time}.`,
+          type: "Appointment",
+        },
+      ]);
+  
+      // 🔄 Increment the user's appointment count
+      user.appointmentsCount += 1;
+      await user.save();
+  
+      res.status(201).json({ message: "Appointment booked successfully", appointment });
+  
     } catch (error) {
-        console.error("❌ Error booking appointment:", error);
-        res.status(500).json({ message: "Server error", error: error.message });
+      console.error("❌ Error booking appointment:", error);
+      res.status(500).json({ message: "Server error", error: error.message });
     }
-};
+  };
 
 
 
