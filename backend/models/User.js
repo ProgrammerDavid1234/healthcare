@@ -18,12 +18,9 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['patient', 'doctor'], default: 'patient' },
   resetPasswordToken: { type: String },
   resetPasswordExpire: { type: Date },
-  subscription: {
-    status: { type: String, default: "inactive" }, // active, inactive, canceled
-    plan: { type: String, default: "" }, // Basic, Pro, Enterprise
-    stripeCustomerId: { type: String },
-    stripeSubscriptionId: { type: String },
-},
+  subscriptionStatus: { type: String, enum: ["active", "inactive"], default: "inactive" },
+  subscriptionId: { type: String }, // Store Stripe subscription ID
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

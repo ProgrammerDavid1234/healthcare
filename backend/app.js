@@ -51,7 +51,7 @@ app.use("/api", interactionsRoutes);
 app.use("/api", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin", authRoutes);
-app.use("/api/subscription", subscriptionRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api", appointmentRoutes);
 app.use('/uploads', express.static('uploads'));
 app.use('/api/doctors', doctorRoutes);
