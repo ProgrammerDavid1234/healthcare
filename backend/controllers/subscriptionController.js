@@ -1,5 +1,6 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const User = require("../models/User"); // Ensure correct import
+const Subscription = require("../models/Subscription"); // ✅ Ensure this is correctly imported
 
 const createCheckoutSession = async (req, res) => {
   try {
@@ -87,6 +88,21 @@ const handleStripeWebhook = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
+const getUserSubscription = async (req, res) => {
+    try {
+      const userId = req.user.id; // Ensure authMiddleware sets req.user
+      const subscription = await Subscription.findOne({ userId });
+  
+      if (!subscription) {
+        return res.status(404).json({ message: "No active subscription found" });
+      }
+  
+      res.json(subscription);
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  };
+  
 // Export both functions properly
-module.exports = { createCheckoutSession, handleStripeWebhook };
+module.exports = { createCheckoutSession, handleStripeWebhook, getUserSubscription };
