@@ -36,13 +36,13 @@ router.post("/subscribe", protect, async (req, res) => {
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
-      customer: user.stripeCustomerId,
       payment_method_types: ["card"],
-      mode: "subscription",
       line_items: [{ price: priceIds[plan], quantity: 1 }],
-      success_url: `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`, // ✅ Redirect here
-      cancel_url: `${process.env.FRONTEND_URL}/subscription`,
+      mode: "subscription",
+      success_url: "https://curease.vercel.app/success?session_id={CHECKOUT_SESSION_ID}",
+      cancel_url: "https://curease.vercel.app/cancel",
     });
+    
     
 
     res.json({ checkoutUrl: session.url }); // ✅ Return checkout URL
