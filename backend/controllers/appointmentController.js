@@ -121,20 +121,23 @@ const getAppointments = async (req, res) => {
 const cancelAppointment = async (req, res) => {
     try {
         const { id } = req.params;
+        console.log("🚀 Deleting appointment with ID:", id);
 
         const appointment = await Appointment.findById(id);
-
         if (!appointment) {
             return res.status(404).json({ message: "Appointment not found" });
         }
 
         await Appointment.findByIdAndDelete(id);
+        console.log("✅ Appointment deleted:", id);
 
         res.status(200).json({ message: "Appointment canceled successfully" });
     } catch (error) {
+        console.error("❌ Error deleting appointment:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
 const rescheduleAppointment = async (req, res) => {
     try {
         const { id } = req.params;

@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post("/appointments", protect, bookAppointment);
 router.get('/getappointments', protect, getAppointments);
-router.delete("/appointments/:id", cancelAppointment);
+router.delete("/:id", protect, cancelAppointment);
 router.put("/appointments/:id/reschedule", protect, rescheduleAppointment);
 router.get("/doctor", protect, getDoctorAppointments);
 
