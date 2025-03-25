@@ -1,17 +1,93 @@
 const express = require("express");
 const router = express.Router();
-const {
-  createCheckoutSession,
-  handleStripeWebhook,
-  getUserSubscription, // ✅ Ensure this function exists in your controller
-} = require("../controllers/subscriptionController");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const User = require("../models/User"); // Adjust path based on your setup
+const { protect } = require('../middleware/authMiddleware'); // Ensure this middleware sets req.user
 
-const { authMiddleware } = require("../middleware/authMiddleware"); // ✅ Ensure correct import
+// Define prices (These should match your Stripe dashboard prices)
+const prices = {
+  basic: "price_1R5X3HF26ipRoVZ5rVQ4EvMX", 
+  pro: "price_1R5X41F26ipRoVZ56mNoiC9x",
+  enterprise: "price_1R5X4dF26ipRoVZ5EkMkWLf1",
+};
 
-// ✅ Correct way to define routes
-router.post("/create-checkout-session", createCheckoutSession);
-router.post("/webhook", express.raw({ type: "application/json" }), handleStripeWebhook);
-router.get("/user/subscription", authMiddleware, getUserSubscription); // ✅ Fix: Use "router.get"
+// Create a checkout session for subscription
+router.post("/subscribe", protect, async (req, res) => {
+  try {
+    const { plan } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-// ✅ Export `router`, NOT `app.use()`
+    // Ensure valid plan
+    if (!prices[plan]) {
+      return res.status(400).json({ error: "Invalid plan selected" });
+    }
+
+    // Create Stripe customer if not already set
+    if (!user.stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: user.name,
+      });
+      user.stripeCustomerId = customer.id;
+      await user.save();
+    }
+
+    // Create Stripe checkout session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "subscription",
+      customer: user.stripeCustomerId,
+      line_items: [{ price: prices[plan], quantity: 1 }],
+      success_url: `${process.env.FRONTEND_URL}/dashboard?success=true`,
+      cancel_url: `${process.env.FRONTEND_URL}/subscription?cancel=true`,
+    });
+
+    res.json({ sessionId: session.id });
+  } catch (error) {
+    console.error("Stripe Subscription Error:", error);
+    res.status(500).json({ error: "Failed to create subscription" });
+  }
+});
+
+// Handle Stripe Webhook for Subscription Events
+router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error("Webhook Error:", err.message);
+    return res.status(400).send(`Webhook error: ${err.message}`);
+  }
+
+  // Handle events (e.g., subscription creation, cancellation)
+  if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.created") {
+    const subscription = event.data.object;
+    const customerId = subscription.customer;
+    const user = await User.findOne({ stripeCustomerId: customerId });
+
+    if (user) {
+      user.subscriptionStatus = subscription.status;
+      user.subscriptionPlan = Object.keys(prices).find(key => prices[key] === subscription.items.data[0].price.id);
+      await user.save();
+    }
+  }
+
+  if (event.type === "customer.subscription.deleted") {
+    const subscription = event.data.object;
+    const customerId = subscription.customer;
+    const user = await User.findOne({ stripeCustomerId: customerId });
+
+    if (user) {
+      user.subscriptionStatus = "canceled";
+      user.subscriptionPlan = "none";
+      await user.save();
+    }
+  }
+
+  res.sendStatus(200);
+});
+
 module.exports = router;
