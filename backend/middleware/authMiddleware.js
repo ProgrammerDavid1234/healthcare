@@ -67,5 +67,23 @@ const adminAuth = (req, res, next) => {
     }
 };
 
+const restrictPremiumFeatures = async (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authorized" });
+    }
+  
+    // Ensure subscription is active and not expired
+    if (
+      req.user.subscriptionStatus !== "active" || 
+      new Date(req.user.subscriptionEndDate) < new Date()
+    ) {
+      return res.status(403).json({ error: "Upgrade your subscription to access this feature." });
+    }
+  
+    next(); // ✅ Allow access if subscription is valid
+  };
+  
+  
+  
 // ✅ Correct export (no overwriting)
-module.exports = { authMiddleware, protect };
+module.exports = { authMiddleware, protect, restrictPremiumFeatures };

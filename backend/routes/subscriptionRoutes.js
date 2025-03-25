@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const User = require("../models/User"); // Adjust path based on your setup
-const { protect } = require("../middleware/authMiddleware"); // Ensure this middleware sets req.user
+const { protect, restrictPremiumFeatures } = require("../middleware/authMiddleware");
+
 
 // Define Stripe Price IDs
 const priceIds = {
@@ -38,10 +39,11 @@ router.post("/subscribe", protect, async (req, res) => {
       customer: user.stripeCustomerId,
       payment_method_types: ["card"],
       mode: "subscription",
-      line_items: [{ price: priceIds[plan], quantity: 1 }], // ✅ Fixed
-      success_url: `${process.env.FRONTEND_URL}/success`,
+      line_items: [{ price: priceIds[plan], quantity: 1 }],
+      success_url: `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`, // ✅ Redirect here
       cancel_url: `${process.env.FRONTEND_URL}/subscription`,
     });
+    
 
     res.json({ checkoutUrl: session.url }); // ✅ Return checkout URL
   } catch (error) {
@@ -62,32 +64,45 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
     return res.status(400).send(`Webhook error: ${err.message}`);
   }
 
-  // Handle subscription events
-  if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.created") {
-    const subscription = event.data.object;
-    const customerId = subscription.customer;
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    const customerId = session.customer;
+
     const user = await User.findOne({ stripeCustomerId: customerId });
 
     if (user) {
-      user.subscriptionStatus = subscription.status;
-      user.subscriptionPlan = Object.keys(priceIds).find(key => priceIds[key] === subscription.items.data[0].price.id); // ✅ Fixed
-      await user.save();
-    }
-  }
+      user.subscriptionStatus = "active";
+      user.subscriptionPlan = session.metadata.plan;
+      user.subscriptionEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-  if (event.type === "customer.subscription.deleted") {
-    const subscription = event.data.object;
-    const customerId = subscription.customer;
-    const user = await User.findOne({ stripeCustomerId: customerId });
-
-    if (user) {
-      user.subscriptionStatus = "canceled";
-      user.subscriptionPlan = "none";
       await user.save();
+
+      console.log(`✅ Subscription activated for ${user.email}`);
+
+      // Send real-time update to frontend
+      res.json({ success: true, message: "Subscription activated", user });
     }
   }
 
   res.sendStatus(200);
 });
+router.get("/status", protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
 
+    res.json({
+      subscriptionStatus: user.subscriptionStatus,
+      subscriptionPlan: user.subscriptionPlan,
+      subscriptionEndDate: user.subscriptionEndDate,
+    });
+  } catch (error) {
+    console.error("Error fetching subscription status:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.get("/premium-feature", protect, restrictPremiumFeatures, async (req, res) => {
+  res.json({ message: "Welcome to the premium feature!" });
+});
 module.exports = router;
