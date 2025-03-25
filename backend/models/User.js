@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema(
       status: { type: String, enum: ["active", "canceled", "none"], default: "none" },
       plan: { type: String, enum: ["basic", "pro", "enterprise"], default: "basic" },
       stripeSubscriptionId: { type: String, default: null },
+      stripeCustomerId: { type: String, default: null }, // ✅ Add stripeCustomerId here
     },
     appointmentsCount: { type: Number, default: 0 },
     aiMessagesCount: { type: Number, default: 0 },

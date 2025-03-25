@@ -19,7 +19,6 @@ router.post("/subscribe", protect, async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // Ensure valid plan
     if (!priceIds[plan]) {
       return res.status(400).json({ error: "Invalid plan selected" });
     }
@@ -34,23 +33,30 @@ router.post("/subscribe", protect, async (req, res) => {
       await user.save();
     }
 
-    // Create Stripe checkout session
+    // ✅ Ensure metadata contains userId and plan
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
+      customer: user.stripeCustomerId,
       line_items: [{ price: priceIds[plan], quantity: 1 }],
       mode: "subscription",
       success_url: "https://curease.vercel.app/success?session_id={CHECKOUT_SESSION_ID}",
       cancel_url: "https://curease.vercel.app/cancel",
+      metadata: { userId: user._id.toString(), plan }, // ✅ Ensure metadata is set
     });
     
+    // 🔍 Debug log
+    console.log("✅ Stripe Session Created:", session.id);
+    console.log("🔍 Metadata Set:", session.metadata);
     
 
-    res.json({ checkoutUrl: session.url }); // ✅ Return checkout URL
+    res.json({ checkoutUrl: session.url });
   } catch (error) {
     console.error("Stripe Subscription Error:", error);
     res.status(500).json({ error: "Failed to create subscription" });
   }
 });
+
+
 
 // Handle Stripe Webhook for Subscription Events
 router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
@@ -105,4 +111,44 @@ router.get("/status", protect, async (req, res) => {
 router.get("/premium-feature", protect, restrictPremiumFeatures, async (req, res) => {
   res.json({ message: "Welcome to the premium feature!" });
 });
+router.post("/confirm-payment", protect, async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ error: "Session ID is required" });
+
+    // Retrieve the Stripe session
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    // 🔍 Debug: Log session metadata
+    console.log("🔍 Stripe Session Retrieved:", session);
+
+    if (!session.metadata || !session.metadata.userId) {
+      return res.status(400).json({ error: "User ID missing from session metadata", session });
+    }
+
+    const userId = session.metadata.userId;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Update subscription
+    user.subscription.status = "active";
+    user.subscription.plan = session.metadata.plan;
+    user.subscription.stripeSubscriptionId = session.subscription;
+    user.subscriptionEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+    await user.save();
+
+    console.log(`✅ Subscription confirmed for ${user.email}`);
+    return res.json({ success: true, message: "Subscription activated", user });
+  } catch (error) {
+    console.error("Error confirming payment:", error);
+    res.status(500).json({ error: "Failed to confirm payment" });
+  }
+});
+
+
+
 module.exports = router;
