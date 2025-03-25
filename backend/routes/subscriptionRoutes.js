@@ -37,13 +37,13 @@ router.post("/subscribe", protect, async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "subscription",
-      customer: user.stripeCustomerId,
-      line_items: [{ price: prices[plan], quantity: 1 }],
-      success_url: `${process.env.FRONTEND_URL}/dashboard?success=true`,
-      cancel_url: `${process.env.FRONTEND_URL}/subscription?cancel=true`,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${process.env.FRONTEND_URL}/success`,
+      cancel_url: `${process.env.FRONTEND_URL}/subscription`,
     });
-
-    res.json({ sessionId: session.id });
+    
+    res.json({ checkoutUrl: session.url }); // ✅ Return checkout URL
+    
   } catch (error) {
     console.error("Stripe Subscription Error:", error);
     res.status(500).json({ error: "Failed to create subscription" });
