@@ -24,7 +24,7 @@ const subscribeUser = async (req, res) => {
       mode: "subscription",
       customer_email: req.user.email,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: "https://yourfrontend.com/success",
+      success_url: "https://curease.vercel.app/success?session_id={CHECKOUT_SESSION_ID}"
       cancel_url: "https://yourfrontend.com/cancel",
     });
 
