@@ -12,7 +12,7 @@ const subscribeUser = async (req, res) => {
     const priceIdMap = {
       basic: "price_1R5X3HF26ipRoVZ5rVQ4EvMX",
       pro: "price_1R5X41F26ipRoVZ56mNoiC9x",
-      enterprise: "price_1R5X4dF26ipRoVZ5EkMkWLf16", //i added 6
+      enterprise: "price_1R5X4dF26ipRoVZ5EkMkWLf167", //i added 67
     };
 
     const priceId = priceIdMap[plan];
