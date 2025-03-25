@@ -2,16 +2,16 @@ const express = require("express");
 const router = express.Router();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const User = require("../models/User"); // Adjust path based on your setup
-const { protect } = require('../middleware/authMiddleware'); // Ensure this middleware sets req.user
+const { protect } = require("../middleware/authMiddleware"); // Ensure this middleware sets req.user
 
-// Define prices (These should match your Stripe dashboard prices)
-const prices = {
-  basic: "price_1R5X3HF26ipRoVZ5rVQ4EvMX", 
+// Define Stripe Price IDs
+const priceIds = {
+  basic: "price_1R5X3HF26ipRoVZ5rVQ4EvMX",
   pro: "price_1R5X41F26ipRoVZ56mNoiC9x",
   enterprise: "price_1R5X4dF26ipRoVZ5EkMkWLf1",
 };
 
-// Create a checkout session for subscription
+// Create a subscription checkout session
 router.post("/subscribe", protect, async (req, res) => {
   try {
     const { plan } = req.body;
@@ -19,7 +19,7 @@ router.post("/subscribe", protect, async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
 
     // Ensure valid plan
-    if (!prices[plan]) {
+    if (!priceIds[plan]) {
       return res.status(400).json({ error: "Invalid plan selected" });
     }
 
@@ -35,15 +35,15 @@ router.post("/subscribe", protect, async (req, res) => {
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
+      customer: user.stripeCustomerId,
       payment_method_types: ["card"],
       mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: priceIds[plan], quantity: 1 }], // ✅ Fixed
       success_url: `${process.env.FRONTEND_URL}/success`,
       cancel_url: `${process.env.FRONTEND_URL}/subscription`,
     });
-    
+
     res.json({ checkoutUrl: session.url }); // ✅ Return checkout URL
-    
   } catch (error) {
     console.error("Stripe Subscription Error:", error);
     res.status(500).json({ error: "Failed to create subscription" });
@@ -53,7 +53,7 @@ router.post("/subscribe", protect, async (req, res) => {
 // Handle Stripe Webhook for Subscription Events
 router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   const sig = req.headers["stripe-signature"];
-  
+
   let event;
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
@@ -62,7 +62,7 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
     return res.status(400).send(`Webhook error: ${err.message}`);
   }
 
-  // Handle events (e.g., subscription creation, cancellation)
+  // Handle subscription events
   if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.created") {
     const subscription = event.data.object;
     const customerId = subscription.customer;
@@ -70,7 +70,7 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
 
     if (user) {
       user.subscriptionStatus = subscription.status;
-      user.subscriptionPlan = Object.keys(prices).find(key => prices[key] === subscription.items.data[0].price.id);
+      user.subscriptionPlan = Object.keys(priceIds).find(key => priceIds[key] === subscription.items.data[0].price.id); // ✅ Fixed
       await user.save();
     }
   }
