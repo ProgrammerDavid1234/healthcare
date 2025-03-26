@@ -66,47 +66,69 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error("Webhook Error:", err.message);
+    console.error("❌ Webhook Error:", err.message);
     return res.status(400).send(`Webhook error: ${err.message}`);
   }
+
+  console.log("✅ Received Stripe Event:", event.type);
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const customerId = session.customer;
 
+    console.log("🔍 Searching for user with Stripe Customer ID:", customerId);
+
     const user = await User.findOne({ stripeCustomerId: customerId });
 
-    if (user) {
-      user.subscriptionStatus = "active";
-      user.subscriptionPlan = session.metadata.plan;
-      user.subscriptionEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-      await user.save();
-
-      console.log(`✅ Subscription activated for ${user.email}`);
-
-      // Send real-time update to frontend
-      res.json({ success: true, message: "Subscription activated", user });
+    if (!user) {
+      console.error("❌ User not found for customer ID:", customerId);
+      return res.status(404).json({ error: "User not found" });
     }
+
+    console.log(`✅ Subscription activated for ${user.email}`);
+
+    user.subscription.status = "active";
+    user.subscription.plan = session.metadata.plan;
+    user.subscription.stripeSubscriptionId = session.subscription;
+    user.subscriptionEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+    await user.save();
+
+    console.log(`✅ Subscription saved for ${user.email}`);
   }
 
   res.sendStatus(200);
 });
+
 router.get("/status", protect, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ error: "User not found" });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    console.log("✅ User Data from DB:", user); // Log entire user data
+
+    // Ensure subscription data exists
+    if (!user.subscription || !user.subscription.status) {
+      console.log("⚠️ No Subscription Data Found!");
+      return res.json({ error: "No active subscription found" });
+    }
+
+    console.log("✅ Subscription Data Found:", user.subscription);
 
     res.json({
-      subscriptionStatus: user.subscriptionStatus,
-      subscriptionPlan: user.subscriptionPlan,
-      subscriptionEndDate: user.subscriptionEndDate,
+      subscriptionStatus: user.subscription.status,
+      subscriptionPlan: user.subscription.plan,
+      subscriptionEndDate: user.subscriptionEndDate || null,
     });
   } catch (error) {
-    console.error("Error fetching subscription status:", error);
+    console.error("❌ Error fetching subscription status:", error);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 router.get("/premium-feature", protect, restrictPremiumFeatures, async (req, res) => {
   res.json({ message: "Welcome to the premium feature!" });
