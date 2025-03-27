@@ -95,6 +95,36 @@ const sendEmergencyAlert = async (req, res) => {
     }
 };
 
+const deleteNotification = async (req, res) => {
+    try {
+        const { notificationId } = req.params;
+
+        const deletedNotification = await Notification.findByIdAndDelete(notificationId);
+
+        if (!deletedNotification) {
+            return res.status(404).json({ message: "Notification not found" });
+        }
+
+        res.json({ message: "Notification deleted successfully" });
+    } catch (error) {
+        console.error("❌ Error deleting notification:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+// 🗑️ Delete all notifications for a user
+const deleteAllUserNotifications = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const result = await Notification.deleteMany({ userId });
+
+        res.json({ message: `${result.deletedCount} notifications deleted successfully` });
+    } catch (error) {
+        console.error("❌ Error deleting notifications:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
 
 // Schedule the daily reminder to run every day at 9 AM
 schedule.scheduleJob("0 9 * * *", sendDailyReminders);
@@ -104,5 +134,7 @@ module.exports = {
     getUserNotifications,
     sendPrescriptionReminder,
     getAppointmentReminders,
-    sendEmergencyAlert
+    sendEmergencyAlert,
+    deleteNotification,
+    deleteAllUserNotifications
 };
