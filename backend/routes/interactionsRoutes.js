@@ -45,7 +45,7 @@ router.get("/messages/:chatId", protect, async (req, res) => {
     }
 });
 
-/**
+/*
  * ⭐ Leave a review for a doctor
  * POST /api/reviews
  */
