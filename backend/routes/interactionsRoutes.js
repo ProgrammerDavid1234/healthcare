@@ -16,7 +16,7 @@ router.post("/messages", protect, async (req, res) => {
             return res.status(400).json({ message: "Receiver and content are required." });
         }
 
-        const chatId = [req.user.id, receiver].sort().join("_"); // Generate a unique chat ID
+        const chatId = [req.user.id, receiver].sort().join("_"); // Generate unique chat ID
 
         const message = new Message({
             sender: req.user.id,
@@ -31,6 +31,7 @@ router.post("/messages", protect, async (req, res) => {
         res.status(500).json({ message: "Failed to send message", error: error.message });
     }
 });
+
 
 /**
  * 📜 Get chat history between a patient and doctor
