@@ -87,20 +87,25 @@ router.get("/reviews/:doctorId", async (req, res) => {
 });
 
 router.post("/start-chat", protect, async (req, res) => {
-    const { userId, doctorName } = req.body;
-    
-    try {
-      let chat = await Chat.findOne({ userId, doctorName });
-  
-      if (!chat) {
-        chat = new Chat({ userId, doctorName, messages: [] });
-        await chat.save();
-      }
-  
-      res.status(200).json({ chatId: chat._id });
-    } catch (error) {
-      res.status(500).json({ message: "Error starting chat", error });
+    const { userId, doctorId } = req.body;
+
+    if (!doctorId) {
+        return res.status(400).json({ message: "Doctor ID is required." });
     }
-  });
+
+    try {
+        let chat = await Chat.findOne({ userId, doctorId });
+
+        if (!chat) {
+            chat = new Chat({ userId, doctorId, messages: [] });
+            await chat.save();
+        }
+
+        res.status(200).json({ chatId: chat._id });
+    } catch (error) {
+        res.status(500).json({ message: "Error starting chat", error: error.message });
+    }
+});
+
   
 module.exports = router;
