@@ -84,4 +84,21 @@ router.get("/reviews/:doctorId", async (req, res) => {
     }
 });
 
+router.post("/start-chat", protect, async (req, res) => {
+    const { userId, doctorName } = req.body;
+    
+    try {
+      let chat = await Chat.findOne({ userId, doctorName });
+  
+      if (!chat) {
+        chat = new Chat({ userId, doctorName, messages: [] });
+        await chat.save();
+      }
+  
+      res.status(200).json({ chatId: chat._id });
+    } catch (error) {
+      res.status(500).json({ message: "Error starting chat", error });
+    }
+  });
+  
 module.exports = router;
