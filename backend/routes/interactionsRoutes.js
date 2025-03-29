@@ -130,5 +130,27 @@ router.get("/doctor-conversations", protect, async (req, res) => {
     }
   });
   
+  router.get("/messages/doctor-conversations", protect, async (req, res) => {
+    try {
+      if (req.user.role !== "doctor") {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+  
+      const messages = await Message.find({ receiver: req.user.id }).populate("sender", "name");
+      const uniqueSenders = Array.from(new Set(messages.map((msg) => msg.sender._id.toString())));
+  
+      const conversations = uniqueSenders.map((senderId) => {
+        const sender = messages.find((msg) => msg.sender._id.toString() === senderId).sender;
+        return {
+          id: senderId,
+          name: sender.name,
+        };
+      });
+  
+      res.status(200).json(conversations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve conversations", error: error.message });
+    }
+  });
   
 module.exports = router;
