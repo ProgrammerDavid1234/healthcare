@@ -4,24 +4,44 @@ const Doctor = require('../models/Doctor'); // if you have this model
 
 exports.sendMessage = async (req, res) => {
   try {
+    // Extract the necessary fields from the request body
     const { receiverId, receiverModel, content } = req.body;
 
+    // Ensure content and receiver are provided
+    if (!receiverId || !content) {
+      return res.status(400).json({ message: 'Receiver and content are required' });
+    }
+
+    // Get sender ID and model (User or Doctor)
+    const senderId = req.user._id;
+    const senderModel = req.role === 'doctor' ? 'Doctor' : 'User';
+
+    // Determine chatId for the conversation
+    const chatId = senderId < receiverId ? `${senderId}_${receiverId}` : `${receiverId}_${senderId}`;
+
+    // Create a new message in the database
     const message = await Message.create({
-      sender: req.user._id,
-      senderModel: req.role === 'doctor' ? 'Doctor' : 'User',
+      sender: senderId,
+      senderModel,
       receiver: receiverId,
       receiverModel,
-      content
+      content,
+      chatId,
     });
 
+    // Emit the message to the receiver via WebSocket
     const io = req.app.get('io');
     io.to(receiverId).emit('receiveMessage', message);
 
+    // Respond with the created message
     res.status(201).json(message);
   } catch (err) {
+    // Catch and log any errors
+    console.error(err);
     res.status(500).json({ error: 'Failed to send message', details: err.message });
   }
 };
+
 
 
 exports.getMessages = async (req, res) => {
