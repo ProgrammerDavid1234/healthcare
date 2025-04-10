@@ -11,21 +11,25 @@ const router = express.Router();
  * 📩 Send a message (Patient or Doctor)
  * POST /api/messages
  */
+
 router.post("/messages", protect, async (req, res) => {
     try {
         const { receiver, content } = req.body;
         if (!receiver || !content) {
             return res.status(400).json({ message: "Receiver and content are required." });
         }
-
-        const chatId = [req.user.id, receiver].sort().join("_"); // Generate unique chat ID
-
+        const senderModel = req.user.role === 'doctor' ? 'Doctor' : 'User';
+        const receiverModel = senderModel === 'Doctor' ? 'User' : 'Doctor';
+        
         const message = new Message({
             sender: req.user.id,
             receiver,
             chatId,
             content,
+            senderModel,
+            receiverModel,
         });
+        
 
         await message.save();
         res.status(201).json({ message: "Message sent successfully", data: message });
@@ -87,25 +91,31 @@ router.get("/reviews/:doctorId", async (req, res) => {
 });
 
 router.post("/start-chat", protect, async (req, res) => {
-    const { userId, doctorId } = req.body;
+  const { otherUserId } = req.body;
 
-    if (!doctorId) {
-        return res.status(400).json({ message: "Doctor ID is required." });
-    }
+  if (!otherUserId) {
+      return res.status(400).json({ message: "Other user ID is required." });
+  }
 
-    try {
-        let chat = await Chat.findOne({ userId, doctorId });
+  const isDoctor = req.role === "doctor";
 
-        if (!chat) {
-            chat = new Chat({ userId, doctorId, messages: [] });
-            await chat.save();
-        }
+  const userId = isDoctor ? otherUserId : req.user.id;
+  const doctorId = isDoctor ? req.user.id : otherUserId;
 
-        res.status(200).json({ chatId: chat._id });
-    } catch (error) {
-        res.status(500).json({ message: "Error starting chat", error: error.message });
-    }
+  try {
+      let chat = await Chat.findOne({ userId, doctorId });
+
+      if (!chat) {
+          chat = new Chat({ userId, doctorId });
+          await chat.save();
+      }
+
+      res.status(200).json({ chatId: chat._id });
+  } catch (error) {
+      res.status(500).json({ message: "Error starting chat", error: error.message });
+  }
 });
+
 
 router.get("/doctor-conversations", protect, async (req, res) => {
     try {
@@ -130,27 +140,6 @@ router.get("/doctor-conversations", protect, async (req, res) => {
     }
   });
   
-  router.get("/messages/doctor-conversations", protect, async (req, res) => {
-    try {
-      if (req.user.role !== "doctor") {
-        return res.status(403).json({ message: "Unauthorized" });
-      }
-  
-      const messages = await Message.find({ receiver: req.user.id }).populate("sender", "name");
-      const uniqueSenders = Array.from(new Set(messages.map((msg) => msg.sender._id.toString())));
-  
-      const conversations = uniqueSenders.map((senderId) => {
-        const sender = messages.find((msg) => msg.sender._id.toString() === senderId).sender;
-        return {
-          id: senderId,
-          name: sender.name,
-        };
-      });
-  
-      res.status(200).json(conversations);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to retrieve conversations", error: error.message });
-    }
-  });
+
   
 module.exports = router;

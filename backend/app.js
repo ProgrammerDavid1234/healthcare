@@ -15,10 +15,12 @@ const server = http.createServer(app); // Create HTTP server from express
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
+    origin: "*",
+    methods: ["GET", "POST"],
   },
 });
+
+
 app.set('io', io); // Expose io to use in controllers
 
 // Middleware
