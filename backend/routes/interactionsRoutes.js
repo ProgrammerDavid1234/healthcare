@@ -13,30 +13,32 @@ const router = express.Router();
  */
 
 router.post("/messages", protect, async (req, res) => {
-    try {
-        const { receiver, content } = req.body;
-        if (!receiver || !content) {
-            return res.status(400).json({ message: "Receiver and content are required." });
-        }
-        const senderModel = req.user.role === 'doctor' ? 'Doctor' : 'User';
-        const receiverModel = senderModel === 'Doctor' ? 'User' : 'Doctor';
-        
-        const message = new Message({
-            sender: req.user.id,
-            receiver,
-            chatId,
-            content,
-            senderModel,
-            receiverModel,
-        });
-        
+  try {
+      const { receiver, content, chatId } = req.body;
 
-        await message.save();
-        res.status(201).json({ message: "Message sent successfully", data: message });
-    } catch (error) {
-        res.status(500).json({ message: "Failed to send message", error: error.message });
-    }
+      if (!receiver || !content || !chatId) {
+          return res.status(400).json({ message: "Receiver, content, and chatId are required." });
+      }
+
+      const senderModel = req.user.role === 'doctor' ? 'Doctor' : 'User';
+      const receiverModel = senderModel === 'Doctor' ? 'User' : 'Doctor';
+
+      const message = new Message({
+          sender: req.user.id,
+          receiver,
+          chatId,
+          content,
+          senderModel,
+          receiverModel,
+      });
+
+      await message.save();
+      res.status(201).json({ message: "Message sent successfully", data: message });
+  } catch (error) {
+      res.status(500).json({ message: "Failed to send message", error: error.message });
+  }
 });
+
 
 
 /**
