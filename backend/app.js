@@ -76,9 +76,28 @@ io.on('connection', (socket) => {
     console.log(`🟢 User/Doctor joined room: ${userId}`);
   });
 
-  socket.on('sendMessage', (data) => {
-    // Forward message to the intended receiver in real-time
-    io.to(data.receiverId).emit('receiveMessage', data);
+  socket.on('sendMessage', async (data) => {
+    try {
+      const { senderId, receiverId, chatId, content, senderModel, receiverModel } = data;
+
+      const message = new Message({
+        sender: senderId,
+        receiver: receiverId,
+        chatId,
+        content,
+        senderModel,
+        receiverModel,
+      });
+
+      await message.save();
+
+      // Emit message to receiver and sender (real-time update)
+      io.to(receiverId).emit('receiveMessage', message);
+      socket.emit('messageSaved', message);
+    } catch (error) {
+      console.error('❌ Error saving message:', error.message);
+      socket.emit('errorMessage', { message: "Failed to send message" });
+    }
   });
 
   socket.on('disconnect', () => {
