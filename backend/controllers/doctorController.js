@@ -66,7 +66,7 @@ const loginDoctor = async (req, res) => {
 const getAvailableDoctors = async (req, res) => {
     try {
         // Fetch only available doctors
-        const doctors = await Doctor.find({ availability: true }).select("name specialization experience ratings consultationFee location");
+        const doctors = await Doctor.find({ availability: true }).select("name specialization experience ratings consultationFee location phone");
 
         if (!doctors.length) {
             return res.status(404).json({ message: "No available doctors at the moment" });
